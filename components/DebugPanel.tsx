@@ -142,23 +142,23 @@ export function DebugProvider({ children }: { children: React.ReactNode }) {
 
   const applyFont = (id: string) => { setFontId(id); applyFontById(id); persist({ fontId: id }); };
 
+  // Write theme CSS vars into a <style> tag scoped to .dark / .light
+  // This way next-themes class toggling still works — it switches .dark/.light
+  // on <html> and our vars are picked up correctly without inline style conflicts.
   const applyThemeById = (id: string, dark: boolean) => {
     const list = dark ? DARK_THEMES : LIGHT_THEMES;
     const t = list.find(x => x.id === id); if (!t) return;
-    // Apply CSS vars
-    Object.entries(t.vars).forEach(([k,v]) => document.documentElement.style.setProperty(k, v as string));
-    // Sync the html class so next-themes .light / .dark overrides don't fight us
-    const html = document.documentElement;
-    if (dark) {
-      html.classList.remove("light");
-      html.classList.add("dark");
-      // next-themes stores its value in localStorage — keep in sync
-      try { localStorage.setItem("theme", "dark"); } catch {}
-    } else {
-      html.classList.remove("dark");
-      html.classList.add("light");
-      try { localStorage.setItem("theme", "light"); } catch {}
+    const selector = dark ? ".dark" : ".light";
+    const vars = Object.entries(t.vars).map(([k,v]) => `  ${k}: ${v};`).join("\n");
+    const css = `${selector} {\n${vars}\n}`;
+    const styleId = dark ? "dbg-dark-theme" : "dbg-light-theme";
+    let el = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!el) {
+      el = document.createElement("style");
+      el.id = styleId;
+      document.head.appendChild(el);
     }
+    el.textContent = css;
   };
 
   const applyTheme = (id: string, dark: boolean) => {
