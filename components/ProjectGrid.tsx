@@ -84,7 +84,7 @@ export default function ProjectGrid() {
           <ProjectCarousel
             projects={filtered}
             style={carouselStyle as CarouselStyle}
-            onSelect={p => setSelected(p)}
+            onLaunch={p => setSelected(p)}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
