@@ -145,7 +145,20 @@ export function DebugProvider({ children }: { children: React.ReactNode }) {
   const applyThemeById = (id: string, dark: boolean) => {
     const list = dark ? DARK_THEMES : LIGHT_THEMES;
     const t = list.find(x => x.id === id); if (!t) return;
+    // Apply CSS vars
     Object.entries(t.vars).forEach(([k,v]) => document.documentElement.style.setProperty(k, v as string));
+    // Sync the html class so next-themes .light / .dark overrides don't fight us
+    const html = document.documentElement;
+    if (dark) {
+      html.classList.remove("light");
+      html.classList.add("dark");
+      // next-themes stores its value in localStorage — keep in sync
+      try { localStorage.setItem("theme", "dark"); } catch {}
+    } else {
+      html.classList.remove("dark");
+      html.classList.add("light");
+      try { localStorage.setItem("theme", "light"); } catch {}
+    }
   };
 
   const applyTheme = (id: string, dark: boolean) => {

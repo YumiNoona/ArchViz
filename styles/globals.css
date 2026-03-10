@@ -12,7 +12,7 @@
 
 /* ══════════ DARK (default) — Obsidian ══════════ */
 @layer base {
-  :root {
+  :root, .dark {
     --background: 240 15% 6%;
     --foreground: 40 18% 91%;
     --card: 240 14% 9%;
