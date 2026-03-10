@@ -6,12 +6,13 @@ import { useRef, useState, useEffect } from "react";
 import { ArrowRight, Play, ChevronDown } from "lucide-react";
 import { haptic } from "@/lib/utils";
 import { useDebug } from "./DebugPanel";
+import { useSiteConfig } from "./SiteConfigProvider";
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  SITE CONFIG — edit these to change all visible text on the site
 // ─────────────────────────────────────────────────────────────────────────────
 export const SITE_CONFIG = {
-  brand:          "Interactive ArchViz",
+  brand:          "VastuChitra ArchViz",
   eyebrow:        "Unreal Engine · Pixel Streaming",
   headline:       ["Immersive", "Architecture", "Experiences"],
   sub:            "Walk through every space before a single brick is laid. Photorealistic real-time environments streamed to any browser.",
@@ -170,15 +171,16 @@ function ScrollHint() {
 //  Variant A: Split (default) — headline left, visual panel right
 // ─────────────────────────────────────────────────────────────────────────────
 function HeroSplit({ animStyle }: { animStyle: AnimStyle }) {
+  const { config: cfg } = useSiteConfig();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const y  = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);
   const op = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
 
   const { container, item } = getVariants(animStyle);
-  const h0 = useScramble(SITE_CONFIG.headline[0], animStyle === "scramble");
-  const h1 = useScramble(SITE_CONFIG.headline[1], animStyle === "scramble");
-  const h2 = useScramble(SITE_CONFIG.headline[2], animStyle === "scramble");
+  const h0 = useScramble(cfg.headline[0], animStyle === "scramble");
+  const h1 = useScramble(cfg.headline[1], animStyle === "scramble");
+  const h2 = useScramble(cfg.headline[2], animStyle === "scramble");
 
   return (
     <motion.section ref={ref} key="split"
@@ -199,41 +201,41 @@ function HeroSplit({ animStyle }: { animStyle: AnimStyle }) {
             <motion.div variants={item} className="mb-6">
               <span className="inline-flex items-center gap-2 text-[11px] font-medium tracking-[0.14em] uppercase px-3.5 py-1.5 rounded-full border border-primary/25 bg-primary/8 text-primary/80">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                {SITE_CONFIG.eyebrow}
+                {cfg.eyebrow}
               </span>
             </motion.div>
 
             <motion.h1 variants={item}
               className="font-light leading-[0.88] tracking-tight mb-7"
               style={{ fontFamily: "var(--font-display)", fontSize: "clamp(3.2rem,6.5vw,6rem)" }}>
-              {animStyle === "stagger-wave" ? <StaggerWords text={SITE_CONFIG.headline[0]} /> : h0}<br />
+              {animStyle === "stagger-wave" ? <StaggerWords text={cfg.headline[0]} /> : h0}<br />
               <span className="text-gradient italic">
-                {animStyle === "stagger-wave" ? <StaggerWords text={SITE_CONFIG.headline[1]} /> : h1}
+                {animStyle === "stagger-wave" ? <StaggerWords text={cfg.headline[1]} /> : h1}
               </span><br />
-              {animStyle === "stagger-wave" ? <StaggerWords text={SITE_CONFIG.headline[2]} /> : h2}
+              {animStyle === "stagger-wave" ? <StaggerWords text={cfg.headline[2]} /> : h2}
             </motion.h1>
 
             <motion.p variants={item}
               className="text-muted-foreground leading-relaxed mb-9 max-w-[420px]"
               style={{ fontSize: "clamp(0.9rem,1.3vw,1.05rem)" }}>
-              {SITE_CONFIG.sub}
+              {cfg.sub}
             </motion.p>
 
             <motion.div variants={item} className="flex items-center gap-3 flex-wrap mb-14">
               <motion.a href="#projects" onClick={() => haptic(10)}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-lg shadow-primary/25 hover:opacity-90 transition-opacity"
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                {SITE_CONFIG.cta} <ArrowRight size={14} />
+                {cfg.cta} <ArrowRight size={14} />
               </motion.a>
               <motion.a href="#about" onClick={() => haptic(5)}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/25 transition-all"
                 whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Play size={11} /> {SITE_CONFIG.ctaSecondary}
+                <Play size={11} /> {cfg.ctaSecondary}
               </motion.a>
             </motion.div>
 
             <motion.div variants={item} className="flex items-center gap-10 pt-8 border-t border-border/40">
-              {SITE_CONFIG.stats.map(s => (
+              {cfg.stats.map(s => (
                 <div key={s.label}>
                   <div className="font-light leading-none mb-1"
                     style={{ fontFamily: "var(--font-display)", fontSize: "1.7rem" }}>{s.value}</div>
@@ -261,10 +263,11 @@ function HeroSplit({ animStyle }: { animStyle: AnimStyle }) {
 //  Variant B: Centered
 // ─────────────────────────────────────────────────────────────────────────────
 function HeroCentered({ animStyle }: { animStyle: AnimStyle }) {
+  const { config: cfg } = useSiteConfig();
   const { container, item } = getVariants(animStyle);
-  const h0 = useScramble(SITE_CONFIG.headline[0], animStyle === "scramble");
-  const h1 = useScramble(SITE_CONFIG.headline[1], animStyle === "scramble");
-  const h2 = useScramble(SITE_CONFIG.headline[2], animStyle === "scramble");
+  const h0 = useScramble(cfg.headline[0], animStyle === "scramble");
+  const h1 = useScramble(cfg.headline[1], animStyle === "scramble");
+  const h2 = useScramble(cfg.headline[2], animStyle === "scramble");
 
   return (
     <motion.section key="centered"
@@ -278,34 +281,34 @@ function HeroCentered({ animStyle }: { animStyle: AnimStyle }) {
 
         <motion.div variants={item} className="mb-7">
           <span className="inline-flex items-center gap-2 text-[11px] font-medium tracking-[0.14em] uppercase px-3.5 py-1.5 rounded-full border border-primary/25 bg-primary/8 text-primary/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />{SITE_CONFIG.eyebrow}
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />{cfg.eyebrow}
           </span>
         </motion.div>
 
         <motion.h1 variants={item}
           className="font-light leading-[0.9] tracking-tight mb-8"
           style={{ fontFamily: "var(--font-display)", fontSize: "clamp(3.5rem,8vw,7.5rem)" }}>
-          {animStyle === "stagger-wave" ? <StaggerWords text={SITE_CONFIG.headline[0]} /> : h0}{" "}
+          {animStyle === "stagger-wave" ? <StaggerWords text={cfg.headline[0]} /> : h0}{" "}
           <span className="text-gradient italic">
-            {animStyle === "stagger-wave" ? <StaggerWords text={SITE_CONFIG.headline[1]} /> : h1}
+            {animStyle === "stagger-wave" ? <StaggerWords text={cfg.headline[1]} /> : h1}
           </span><br />
-          {animStyle === "stagger-wave" ? <StaggerWords text={SITE_CONFIG.headline[2]} /> : h2}
+          {animStyle === "stagger-wave" ? <StaggerWords text={cfg.headline[2]} /> : h2}
         </motion.h1>
 
         <motion.p variants={item} className="text-muted-foreground text-lg leading-relaxed mb-10 max-w-xl mx-auto">
-          {SITE_CONFIG.sub}
+          {cfg.sub}
         </motion.p>
 
         <motion.div variants={item} className="flex items-center justify-center gap-4">
           <motion.a href="#projects" onClick={() => haptic(10)}
             className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-xl shadow-primary/25"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-            {SITE_CONFIG.cta} <ArrowRight size={14} />
+            {cfg.cta} <ArrowRight size={14} />
           </motion.a>
         </motion.div>
 
         <motion.div variants={item} className="flex items-center justify-center gap-12 mt-16 pt-8 border-t border-border/30">
-          {SITE_CONFIG.stats.map(s => (
+          {cfg.stats.map(s => (
             <div key={s.label} className="text-center">
               <div className="font-light mb-0.5"
                 style={{ fontFamily: "var(--font-display)", fontSize: "2rem" }}>{s.value}</div>
@@ -323,10 +326,11 @@ function HeroCentered({ animStyle }: { animStyle: AnimStyle }) {
 //  Variant C: Bold — oversized type bottom-aligned
 // ─────────────────────────────────────────────────────────────────────────────
 function HeroBold({ animStyle }: { animStyle: AnimStyle }) {
+  const { config: cfg } = useSiteConfig();
   const { container, item } = getVariants(animStyle);
-  const h0 = useScramble(SITE_CONFIG.headline[0], animStyle === "scramble");
-  const h1 = useScramble(SITE_CONFIG.headline[1], animStyle === "scramble");
-  const h2 = useScramble(SITE_CONFIG.headline[2], animStyle === "scramble");
+  const h0 = useScramble(cfg.headline[0], animStyle === "scramble");
+  const h1 = useScramble(cfg.headline[1], animStyle === "scramble");
+  const h2 = useScramble(cfg.headline[2], animStyle === "scramble");
 
   const headlineStyle: React.CSSProperties = {
     fontFamily: "var(--font-display)",
@@ -345,26 +349,26 @@ function HeroBold({ animStyle }: { animStyle: AnimStyle }) {
           style={headlineStyle}
           variants={container} initial="hidden" animate="show">
           <motion.span variants={item} className="block">
-            {animStyle === "stagger-wave" ? <StaggerWords text={SITE_CONFIG.headline[0]} /> : h0}
+            {animStyle === "stagger-wave" ? <StaggerWords text={cfg.headline[0]} /> : h0}
           </motion.span>
           <motion.span variants={item} className="block text-gradient italic">
-            {animStyle === "stagger-wave" ? <StaggerWords text={SITE_CONFIG.headline[1]} /> : h1}
+            {animStyle === "stagger-wave" ? <StaggerWords text={cfg.headline[1]} /> : h1}
           </motion.span>
           <motion.span variants={item} className="block">
-            {animStyle === "stagger-wave" ? <StaggerWords text={SITE_CONFIG.headline[2]} /> : h2}
+            {animStyle === "stagger-wave" ? <StaggerWords text={cfg.headline[2]} /> : h2}
           </motion.span>
         </motion.h1>
         <div className="flex items-end justify-between flex-wrap gap-6">
           <motion.p className="text-muted-foreground max-w-sm leading-relaxed"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.7 }}>
-            {SITE_CONFIG.sub}
+            {cfg.sub}
           </motion.p>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
             <motion.a href="#projects" onClick={() => haptic(10)}
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-lg shadow-primary/25"
               whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              {SITE_CONFIG.cta} <ArrowRight size={14} />
+              {cfg.cta} <ArrowRight size={14} />
             </motion.a>
           </motion.div>
         </div>

@@ -28,8 +28,19 @@ export default function LaunchModal({ project, onClose }: Props) {
   const submit = async () => {
     if (!validate() || !project) return;
     haptic(10); setStage("submitting");
-    try { await saveVisitor({ ...form, project: project.title, project_id: project.id }); }
-    catch { /* silent */ }
+    try {
+      await saveVisitor({ ...form, project: project.title, project_id: project.id });
+      // Auto-send welcome email (fire-and-forget — never blocks stream launch)
+      fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipients: [{ name: form.name, email: form.email, project: project.title }],
+          subject: "Welcome to {{project}} — VastuChitra ArchViz",
+          body: `Hi {{name}},\n\nThank you for exploring {{project}} through our interactive platform.\n\nYou can return to the experience anytime. We'd love to hear your thoughts.\n\nWarm regards,\nVastuChitra ArchViz Studio`,
+        }),
+      }).catch(() => { /* silent — email failure never blocks UX */ });
+    } catch { /* silent */ }
     setStage("success"); haptic(15);
     setTimeout(() => {
       window.open(project.stream_url, "_blank", "noopener,noreferrer");

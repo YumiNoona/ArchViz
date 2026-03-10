@@ -1,8 +1,9 @@
 "use client";
+import { useSiteConfig, DebugPreset } from "./SiteConfigProvider";
 
 import { useState, useEffect, createContext, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings2, X, Type, Palette, Layout, Eye, Zap } from "lucide-react";
+import { Settings2, X, Type, Palette, Layout, Eye, Zap, Globe, Save, Trash2 as Trash } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════════
    FONTS
@@ -280,7 +281,7 @@ export function DebugProvider({ children }: { children: React.ReactNode }) {
   const [darkId, setDarkId] = useState("obsidian");
   const [lightId, setLightId] = useState("saffron");
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"font" | "theme" | "layout" | "animation">("font");
+  const [tab, setTab] = useState<"font" | "theme" | "layout" | "animation" | "site" | "presets">("font");
 
   const applyFont = (id: string) => {
     const f = FONTS.find(x => x.id === id);
@@ -340,6 +341,8 @@ function DebugUI({ open, setOpen, tab, setTab, fontId, applyFont, darkId, lightI
     { id: "theme",     icon: Palette,  label: "Theme"  },
     { id: "layout",    icon: Layout,   label: "Layout" },
     { id: "animation", icon: Zap,      label: "Motion" },
+    { id: "site",      icon: Globe,    label: "Site"   },
+    { id: "presets",   icon: Save,     label: "Presets"},
   ];
 
   return (
@@ -504,13 +507,32 @@ function DebugUI({ open, setOpen, tab, setTab, fontId, applyFont, darkId, lightI
                     </div>
                   </motion.div>
                 )}
+
+                {/* ─ SITE SETTINGS ─ */}
+                {tab === "site" && (
+                  <SiteTab />
+                )}
+
+                {/* ─ PRESETS ─ */}
+                {tab === "presets" && (
+                  <PresetsTab
+                    fontId={fontId} darkId={darkId} lightId={lightId}
+                    heroVariant={heroVariant} footerVariant={footerVariant}
+                    carouselStyle={carouselStyle} animStyle={pageAnimation}
+                    cursorStyle={cursorVariant}
+                    applyFont={applyFont} applyTheme={applyTheme}
+                    setHeroVariant={setHeroVariant} setFooterVariant={setFooterVariant}
+                    setCarouselStyle={setCarouselStyle} setPageAnimation={setPageAnimation}
+                    setCursorVariant={setCursorVariant}
+                  />
+                )}
               </AnimatePresence>
             </div>
 
             {/* Footer */}
             <div className="px-4 py-2.5 border-t flex items-center gap-2" style={{ borderColor: "hsl(var(--border)/0.4)" }}>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[9px]" style={{ color: "hsl(var(--muted-foreground)/0.45)" }}>Changes apply instantly · dev only</span>
+              <span className="text-[9px]" style={{ color: "hsl(var(--muted-foreground)/0.45)" }}>VastuChitra ArchViz · Live Config</span>
             </div>
           </motion.div>
         )}
@@ -533,5 +555,184 @@ function OptionRow({ label, sub, active, onClick }: { label: string; sub: string
       </div>
       {active && <span className="text-[9px]" style={{ color: "hsl(var(--primary))" }}>✓</span>}
     </button>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  SITE TAB — edit hero content live, persisted to Supabase
+// ════════════════════════════════════════════════════════════════════════════
+function SiteTab() {
+  const { config, saveConfig, saving } = useSiteConfig();
+  const [draft, setDraft] = useState({ ...config });
+  const [saved, setSaved] = useState(false);
+
+  // Keep draft in sync if config loads async
+  useEffect(() => { setDraft({ ...config }); }, [config.brand]);
+
+  const set = (key: string, value: unknown) =>
+    setDraft(d => ({ ...d, [key]: value }));
+
+  const setHeadline = (i: number, v: string) => {
+    const h = [...draft.headline] as [string, string, string];
+    h[i] = v;
+    setDraft(d => ({ ...d, headline: h }));
+  };
+
+  const setStat = (i: number, key: "value" | "label", v: string) => {
+    const stats = draft.stats.map((s, idx) => idx === i ? { ...s, [key]: v } : s);
+    setDraft(d => ({ ...d, stats }));
+  };
+
+  const handleSave = async () => {
+    await saveConfig(draft);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const inp = "w-full px-2.5 py-1.5 rounded-lg text-xs border focus:outline-none";
+  const inpStyle = { background: "hsl(var(--muted)/0.5)", borderColor: "hsl(var(--border)/0.5)", color: "hsl(var(--foreground))" };
+
+  return (
+    <motion.div key="site" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <div className="space-y-3">
+        <p className="text-[9px] font-medium tracking-widest uppercase px-1 mb-1" style={{ color: "hsl(var(--muted-foreground))" }}>Site Name</p>
+        <input className={inp} style={inpStyle} value={draft.brand}
+          onChange={e => set("brand", e.target.value)} placeholder="Brand name" />
+
+        <p className="text-[9px] font-medium tracking-widest uppercase px-1 mb-1 mt-2" style={{ color: "hsl(var(--muted-foreground))" }}>Eyebrow Text</p>
+        <input className={inp} style={inpStyle} value={draft.eyebrow}
+          onChange={e => set("eyebrow", e.target.value)} placeholder="Subtitle above headline" />
+
+        <p className="text-[9px] font-medium tracking-widest uppercase px-1 mb-1 mt-2" style={{ color: "hsl(var(--muted-foreground))" }}>Headline (3 words)</p>
+        {[0, 1, 2].map(i => (
+          <input key={i} className={inp} style={inpStyle} value={draft.headline[i]}
+            onChange={e => setHeadline(i, e.target.value)} placeholder={`Word ${i + 1}`} />
+        ))}
+
+        <p className="text-[9px] font-medium tracking-widest uppercase px-1 mb-1 mt-2" style={{ color: "hsl(var(--muted-foreground))" }}>Subtext</p>
+        <textarea className={inp} style={{ ...inpStyle, resize: "vertical" }} rows={2}
+          value={draft.sub} onChange={e => set("sub", e.target.value)} />
+
+        <p className="text-[9px] font-medium tracking-widest uppercase px-1 mb-1 mt-2" style={{ color: "hsl(var(--muted-foreground))" }}>CTA Buttons</p>
+        <input className={inp} style={inpStyle} value={draft.cta}
+          onChange={e => set("cta", e.target.value)} placeholder="Primary CTA" />
+        <input className={inp} style={inpStyle} value={draft.ctaSecondary}
+          onChange={e => set("ctaSecondary", e.target.value)} placeholder="Secondary CTA" />
+
+        <p className="text-[9px] font-medium tracking-widest uppercase px-1 mb-1 mt-2" style={{ color: "hsl(var(--muted-foreground))" }}>Stats</p>
+        {draft.stats.map((s, i) => (
+          <div key={i} className="flex gap-1">
+            <input className={inp} style={{ ...inpStyle, width: "40%" }} value={s.value}
+              onChange={e => setStat(i, "value", e.target.value)} placeholder="Value" />
+            <input className={inp} style={{ ...inpStyle, width: "60%" }} value={s.label}
+              onChange={e => setStat(i, "label", e.target.value)} placeholder="Label" />
+          </div>
+        ))}
+
+        <button onClick={handleSave} disabled={saving}
+          className="w-full mt-3 py-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition-all"
+          style={{ background: saved ? "hsl(142 55% 45%)" : "hsl(var(--primary))", color: "hsl(222 24% 5%)" }}>
+          {saving ? "Saving…" : saved ? "✓ Saved!" : <><Save size={11} /> Apply & Save</>}
+        </button>
+        <p className="text-center text-[9px] mt-1" style={{ color: "hsl(var(--muted-foreground)/0.5)" }}>
+          Saved to Supabase — persists across sessions
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  PRESETS TAB — save/load debug configurations
+// ════════════════════════════════════════════════════════════════════════════
+function PresetsTab({ fontId, darkId, lightId, heroVariant, footerVariant, carouselStyle, animStyle, cursorStyle,
+  applyFont, applyTheme, setHeroVariant, setFooterVariant, setCarouselStyle, setPageAnimation, setCursorVariant }: {
+  fontId: string; darkId: string; lightId: string; heroVariant: string; footerVariant: string;
+  carouselStyle: string; animStyle: string; cursorStyle: string;
+  applyFont: (id: string) => void; applyTheme: (dark: string, light: string) => void;
+  setHeroVariant: (v: string) => void; setFooterVariant: (v: string) => void;
+  setCarouselStyle: (v: string) => void; setPageAnimation: (v: string) => void;
+  setCursorVariant: (v: string) => void;
+}) {
+  const { presets, savePreset, deletePreset, presetsLoading } = useSiteConfig();
+  const [presetName, setPresetName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!presetName.trim()) return;
+    setSaving(true);
+    await savePreset({
+      name: presetName.trim(), fontId, darkId, lightId,
+      heroVariant, footerVariant, carouselStyle, animStyle, cursorStyle,
+    });
+    setSaving(false); setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+    setPresetName("");
+  };
+
+  const handleLoad = (p: DebugPreset) => {
+    applyFont(p.fontId);
+    applyTheme(p.darkId, p.lightId);
+    setHeroVariant(p.heroVariant);
+    setFooterVariant(p.footerVariant);
+    setCarouselStyle(p.carouselStyle);
+    setPageAnimation(p.animStyle);
+    setCursorVariant(p.cursorStyle);
+  };
+
+  return (
+    <motion.div key="presets" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <p className="text-[9px] font-medium tracking-widest uppercase px-1 mb-2" style={{ color: "hsl(var(--muted-foreground))" }}>
+        Save Current Config
+      </p>
+      <div className="flex gap-1 mb-4">
+        <input
+          className="flex-1 px-2.5 py-1.5 rounded-lg text-xs border focus:outline-none"
+          style={{ background: "hsl(var(--muted)/0.5)", borderColor: "hsl(var(--border)/0.5)", color: "hsl(var(--foreground))" }}
+          placeholder="Preset name…" value={presetName}
+          onChange={e => setPresetName(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleSave()}
+        />
+        <button onClick={handleSave} disabled={!presetName.trim() || saving}
+          className="px-2.5 py-1.5 rounded-lg text-xs font-medium disabled:opacity-40"
+          style={{ background: saved ? "hsl(142 55% 45%)" : "hsl(var(--primary))", color: "hsl(222 24% 5%)" }}>
+          {saving ? "…" : saved ? "✓" : <Save size={11} />}
+        </button>
+      </div>
+
+      <p className="text-[9px] font-medium tracking-widest uppercase px-1 mb-2" style={{ color: "hsl(var(--muted-foreground))" }}>
+        Saved Presets
+      </p>
+
+      {presetsLoading ? (
+        <p className="text-[10px] text-center py-3" style={{ color: "hsl(var(--muted-foreground)/0.5)" }}>Loading…</p>
+      ) : presets.length === 0 ? (
+        <p className="text-[10px] text-center py-4" style={{ color: "hsl(var(--muted-foreground)/0.4)" }}>
+          No presets saved yet.<br />Configure the tabs above then save here.
+        </p>
+      ) : (
+        <div className="space-y-1">
+          {presets.map(p => (
+            <div key={p.name} className="flex items-center gap-1 p-2.5 rounded-xl border"
+              style={{ borderColor: "hsl(var(--border)/0.4)", background: "hsl(var(--muted)/0.2)" }}>
+              <button onClick={() => handleLoad(p)} className="flex-1 text-left">
+                <p className="text-xs font-medium" style={{ color: "hsl(var(--foreground))" }}>{p.name}</p>
+                <p className="text-[9px]" style={{ color: "hsl(var(--muted-foreground)/0.6)" }}>
+                  {p.fontId} · {p.darkId} · {p.heroVariant}
+                </p>
+              </button>
+              <button onClick={() => deletePreset(p.name)} className="p-1 rounded-lg opacity-40 hover:opacity-80"
+                style={{ color: "hsl(0 65% 60%)" }}>
+                <Trash size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="text-center text-[9px] mt-3" style={{ color: "hsl(var(--muted-foreground)/0.5)" }}>
+        Presets saved to Supabase
+      </p>
+    </motion.div>
   );
 }

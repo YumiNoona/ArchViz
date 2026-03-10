@@ -1,4 +1,5 @@
 "use client";
+import { useSiteConfig } from "./SiteConfigProvider";
 
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,7 +7,6 @@ import ThemeToggle from "./ThemeToggle";
 import { haptic } from "@/lib/utils";
 import { Menu, X, Zap } from "lucide-react";
 
-const BRAND = "Interactive ArchViz";
 const navLinks = [
   { label: "Projects", href: "#projects" },
   { label: "About", href: "#about" },
@@ -14,6 +14,7 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const { config } = useSiteConfig();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -80,7 +81,7 @@ export default function Navbar() {
           >
             <LogoMark />
             <span className="text-sm font-medium tracking-tight hidden sm:block" style={{ fontFamily: "var(--font-body)" }}>
-              {BRAND}
+              {config.brand}
             </span>
           </motion.a>
 
