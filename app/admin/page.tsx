@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  getVisitors, getVisitorStats, getProjects, createProject, deleteProject,
-  Project, ProjectType,
+  getVisitors, getVisitorStats, getProjects, createProject, updateProject,
+  deleteProject, getLinksForProject, createLink, deleteLink,
+  Project, ProjectType, AccessType, ProjectLink,
 } from "@/lib/supabase";
 import {
   Users, Eye, TrendingUp, Calendar, LogOut, ExternalLink,
   Search, Download, LayoutGrid, Lock, EyeOff, FolderPlus,
   Image as ImageIcon, Link2, MapPin, Tag, Trash2,
   Plus, AlertTriangle, X, RefreshCw, Sparkles, Mail,
-  Send, CheckCircle2, Clock, ArrowRight,
+  Send, CheckCircle2, Clock, ArrowRight, Copy, Shield,
+  KeyRound, Globe, UserCircle2, Sun, Moon, ChevronDown, ChevronUp,
 } from "lucide-react";
 
 // Password is checked server-side via /api/admin-auth — never stored in client code
@@ -27,18 +29,7 @@ interface Stats {
 }
 type Tab = "overview" | "visitors" | "projects" | "email";
 
-interface NewProject {
-  title: string; description: string; long_description: string;
-  stream_url: string; type: ProjectType; location: string;
-  year: string; featured: boolean; sort_order: number;
-  imageFile: File | null; imagePreview: string;
-}
 
-const BLANK: NewProject = {
-  title: "", description: "", long_description: "", stream_url: "",
-  type: "Residential", location: "", year: new Date().getFullYear().toString(),
-  featured: false, sort_order: 0, imageFile: null, imagePreview: "",
-};
 
 // ── Shared input style ───────────────────────────────────────────────────────
 const inp = {
@@ -449,11 +440,12 @@ function VisitorsTab({ filtered, search, setSearch, fmt }: {
 //  PROJECTS TAB
 // ══════════════════════════════════════════════════════════════════════════════
 function ProjectsTab() {
-  const [projects, setProjects]     = useState<Project[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [showForm, setShowForm]     = useState(false);
-  const [deleteId, setDeleteId]     = useState<string|null>(null);
-  const [deleting, setDeleting]     = useState(false);
+  const [projects,   setProjects]   = useState<Project[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [showForm,   setShowForm]   = useState(false);
+  const [deleteId,   setDeleteId]   = useState<string|null>(null);
+  const [deleting,   setDeleting]   = useState(false);
+  const [expandId,   setExpandId]   = useState<string|null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const reload = useCallback(async () => {
@@ -505,52 +497,15 @@ function ProjectsTab() {
           <p className="text-xs" style={{ color:"hsl(38 8% 35%)" }}>Click "Add Project" to publish your first one</p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-3">
           <AnimatePresence mode="popLayout">
             {projects.map((p,i) => (
-              <motion.div key={p.id}
-                className="rounded-2xl border overflow-hidden flex items-stretch"
-                style={{ background:"hsl(222 22% 8%)", borderColor:"hsl(222 18% 13%)" }}
-                initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
-                exit={{ opacity:0, scale:0.96 }} transition={{ delay:i*0.04 }} layout>
-                <div className="w-24 flex-shrink-0 relative overflow-hidden" style={{ background:"hsl(222 18% 12%)" }}>
-                  {p.image_url
-                    ? <img src={p.image_url} alt={p.title} className="absolute inset-0 w-full h-full object-cover"/>
-                    : <div className="absolute inset-0 flex items-center justify-center" style={{ color:"hsl(38 8% 28%)" }}><ImageIcon size={22}/></div>
-                  }
-                </div>
-                <div className="flex-1 px-5 py-4 flex items-center gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-sm truncate" style={{ color:"hsl(38 15% 85%)" }}>{p.title}</h3>
-                      {p.featured && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
-                          style={{ background:"hsl(38 65% 58%/0.12)", color:"hsl(38 65% 60%)", border:"1px solid hsl(38 50% 40%/0.2)" }}>
-                          Featured
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs truncate mb-2" style={{ color:"hsl(38 8% 48%)" }}>{p.description}</p>
-                    <div className="flex items-center gap-3 text-[11px]" style={{ color:"hsl(38 8% 38%)" }}>
-                      <span className="flex items-center gap-1"><MapPin size={9}/>{p.location}</span>
-                      <span>{p.year}</span>
-                      <span className="px-1.5 py-0.5 rounded" style={{ background:"hsl(222 18% 13%)", color:"hsl(38 8% 50%)" }}>{p.type}</span>
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0 flex items-center gap-1.5 text-[11px]"
-                    style={{ color: p.stream_url && !p.stream_url.includes("REPLACE_ME") ? "hsl(142 55% 50%)" : "hsl(38 8% 35%)" }}>
-                    <Link2 size={11}/>
-                    {p.stream_url && !p.stream_url.includes("REPLACE_ME") ? "Stream ready" : "No stream URL"}
-                  </div>
-                  <button onClick={() => setDeleteId(p.id)}
-                    className="flex-shrink-0 p-2 rounded-xl transition-all"
-                    style={{ color:"hsl(0 55% 55%/0.6)" }}
-                    onMouseEnter={e => { e.currentTarget.style.color="hsl(0 65% 62%)"; e.currentTarget.style.background="hsl(0 50% 40%/0.1)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color="hsl(0 55% 55%/0.6)"; e.currentTarget.style.background="transparent"; }}>
-                    <Trash2 size={15}/>
-                  </button>
-                </div>
-              </motion.div>
+              <ProjectRow key={p.id} project={p} index={i}
+                expanded={expandId===p.id}
+                onToggle={() => setExpandId(expandId===p.id ? null : p.id)}
+                onDelete={() => setDeleteId(p.id)}
+                onUpdate={reload}
+              />
             ))}
           </AnimatePresence>
         </div>
@@ -570,30 +525,362 @@ function ProjectsTab() {
   );
 }
 
+// ── Project row with expandable access + links panel ─────────────────────────
+function ProjectRow({ project, index, expanded, onToggle, onDelete, onUpdate }: {
+  project: Project; index: number; expanded: boolean;
+  onToggle: ()=>void; onDelete: ()=>void; onUpdate: ()=>void;
+}) {
+  return (
+    <motion.div className="rounded-2xl border overflow-hidden"
+      style={{ background:"hsl(222 22% 8%)", borderColor: expanded ? "hsl(38 50% 40%/0.3)" : "hsl(222 18% 13%)" }}
+      initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
+      exit={{ opacity:0, scale:0.96 }} transition={{ delay:index*0.04 }} layout>
+
+      {/* Row header */}
+      <div className="flex items-stretch">
+        <div className="w-20 flex-shrink-0 relative overflow-hidden" style={{ background:"hsl(222 18% 12%)", minHeight:72 }}>
+          {project.image_url
+            ? <img src={project.image_url} alt={project.title} className="absolute inset-0 w-full h-full object-cover"/>
+            : <div className="absolute inset-0 flex items-center justify-center" style={{ color:"hsl(38 8% 28%)" }}><ImageIcon size={20}/></div>
+          }
+        </div>
+        <div className="flex-1 px-4 py-3 flex items-center gap-4 min-w-0">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h3 className="font-medium text-sm truncate" style={{ color:"hsl(38 15% 85%)" }}>{project.title}</h3>
+              {project.featured && <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                style={{ background:"hsl(38 65% 58%/0.12)", color:"hsl(38 65% 60%)", border:"1px solid hsl(38 50% 40%/0.2)" }}>Featured</span>}
+              {/* Access badge */}
+              <AccessBadge type={project.access_type ?? "public"}/>
+            </div>
+            <p className="text-xs truncate" style={{ color:"hsl(38 8% 46%)" }}>{project.location} · {project.year}</p>
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button onClick={onToggle}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs border transition-all"
+              style={{ borderColor:"hsl(222 18% 18%)", color:"hsl(38 8% 50%)",
+                background: expanded ? "hsl(38 65% 58%/0.08)" : "transparent" }}>
+              {expanded ? <ChevronUp size={12}/> : <ChevronDown size={12}/>} Access
+            </button>
+            <button onClick={onDelete} className="p-2 rounded-xl transition-all"
+              style={{ color:"hsl(0 55% 55%/0.5)" }}
+              onMouseEnter={e => { e.currentTarget.style.color="hsl(0 65% 62%)"; e.currentTarget.style.background="hsl(0 50% 40%/0.1)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color="hsl(0 55% 55%/0.5)"; e.currentTarget.style.background="transparent"; }}>
+              <Trash2 size={14}/>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded access panel */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }}
+            exit={{ height:0, opacity:0 }} transition={{ duration:0.3, ease:[0.16,1,0.3,1] }}
+            style={{ borderTop:"1px solid hsl(222 18% 13%)", overflow:"hidden" }}>
+            <AccessPanel project={project} onUpdate={onUpdate}/>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function AccessBadge({ type }: { type: AccessType | string }) {
+  const map: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
+    public:   { icon:<Globe size={9}/>,    label:"Public",   color:"142 55% 50%" },
+    password: { icon:<Lock size={9}/>,     label:"Password", color:"38 65% 55%"  },
+    otp:      { icon:<KeyRound size={9}/>, label:"OTP",      color:"258 70% 68%" },
+  };
+  const m = map[type] ?? map.public;
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+      style={{ background:`hsl(${m.color}/0.1)`, color:`hsl(${m.color})`, border:`1px solid hsl(${m.color}/0.2)` }}>
+      {m.icon}{m.label}
+    </span>
+  );
+}
+
+// ── Access Panel (inside each project row) ────────────────────────────────────
+function AccessPanel({ project, onUpdate }: { project: Project; onUpdate: ()=>void }) {
+  const [accessType,  setAccessType]  = useState<AccessType>(project.access_type ?? "public");
+  const [password,    setPassword]    = useState(project.access_password ?? "");
+  const [showPw,      setShowPw]      = useState(false);
+  const [saving,      setSaving]      = useState(false);
+  const [saved,       setSaved]       = useState(false);
+  const [links,       setLinks]       = useState<ProjectLink[]>([]);
+  const [linksLoaded, setLinksLoaded] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [newClient,   setNewClient]   = useState({ name:"", email:"", note:"", expires:"" });
+  const [generating,  setGenerating]  = useState(false);
+  const [copied,      setCopied]      = useState<string|null>(null);
+
+  const loadLinks = useCallback(async () => {
+    const data = await getLinksForProject(project.id);
+    setLinks(data);
+    setLinksLoaded(true);
+  }, [project.id]);
+
+  useEffect(() => { loadLinks(); }, [loadLinks]);
+
+  const saveAccess = async () => {
+    setSaving(true);
+    await updateProject(project.id, {
+      access_type: accessType,
+      access_password: accessType === "password" ? password : "",
+    });
+    setSaving(false); setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+    onUpdate();
+  };
+
+  // Auto-save on access type change
+  useEffect(() => {
+    if (accessType !== (project.access_type ?? "public")) saveAccess();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessType]);
+
+  const generateLink = async () => {
+    if (!newClient.name) return;
+    setGenerating(true);
+    const { data, error } = await createLink({
+      project_id: project.id,
+      client_name: newClient.name,
+      client_email: newClient.email,
+      note: newClient.note,
+      expires_at: newClient.expires ? new Date(newClient.expires).toISOString() : null,
+    });
+    setGenerating(false);
+    if (!error && data) {
+      await loadLinks();
+      setNewClient({ name:"", email:"", note:"", expires:"" });
+      setShowLinkForm(false);
+    }
+  };
+
+  const copyLink = (token: string) => {
+    const url = `${window.location.origin}/p/${token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(token);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+
+  const rowInp: React.CSSProperties = {
+    flex:1, padding:"6px 10px", borderRadius:8, fontSize:12,
+    background:"hsl(222 22% 6%)", border:"1px solid hsl(222 18% 16%)", color:"hsl(38 15% 80%)", outline:"none",
+  };
+
+  return (
+    <div className="p-5 grid lg:grid-cols-[1fr_1fr] gap-6">
+
+      {/* LEFT: Access type + password */}
+      <div>
+        <p className="text-xs font-medium uppercase tracking-widest mb-3" style={{ color:"hsl(38 8% 44%)" }}>
+          Access Control
+        </p>
+
+        {/* 3-way toggle */}
+        <div className="flex gap-2 mb-4">
+          {(["public","password","otp"] as AccessType[]).map(t => (
+            <button key={t} onClick={() => setAccessType(t)}
+              className="flex-1 py-2 rounded-xl text-xs font-medium capitalize transition-all"
+              style={{
+                background: accessType===t ? "hsl(38 65% 58%)" : "hsl(222 18% 12%)",
+                color: accessType===t ? "hsl(222 24% 5%)" : "hsl(38 8% 48%)",
+                border: `1px solid ${accessType===t ? "hsl(38 50% 45%)" : "hsl(222 18% 18%)"}`,
+              }}>
+              {t === "public" ? <><Globe size={9} className="inline mr-1"/>Public</> :
+               t === "password" ? <><Lock size={9} className="inline mr-1"/>Password</> :
+               <><KeyRound size={9} className="inline mr-1"/>OTP</>}
+            </button>
+          ))}
+        </div>
+
+        {/* Description per type */}
+        <p className="text-[11px] mb-3 leading-relaxed" style={{ color:"hsl(38 8% 42%)" }}>
+          {accessType === "public" && "Anyone with a private link can view this project immediately."}
+          {accessType === "password" && "Visitors must enter a password before they can view the project."}
+          {accessType === "otp" && "Visitors enter their email and receive a 6-digit code valid for 10 minutes. Free via Resend."}
+        </p>
+
+        {/* Password field */}
+        {accessType === "password" && (
+          <div className="space-y-2">
+            <div className="relative flex items-center gap-2">
+              <input type={showPw ? "text" : "password"} placeholder="Set a password…"
+                value={password} onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && saveAccess()}
+                style={rowInp}/>
+              <button type="button" onClick={() => setShowPw(!showPw)}
+                className="absolute right-[52px]" style={{ color:"hsl(38 8% 38%)" }}>
+                {showPw ? <EyeOff size={12}/> : <Eye size={12}/>}
+              </button>
+              <button onClick={saveAccess} disabled={saving || !password}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium flex-shrink-0"
+                style={{ background:"hsl(38 65% 58%)", color:"hsl(222 24% 5%)", opacity: !password?0.4:1 }}>
+                {saving ? "…" : saved ? "✓" : "Save"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {accessType === "otp" && (
+          <div className="rounded-xl p-3 text-xs" style={{ background:"hsl(258 50% 30%/0.1)", border:"1px solid hsl(258 50% 40%/0.2)" }}>
+            <p style={{ color:"hsl(258 60% 72%)" }}>✓ OTP emails sent free via Resend</p>
+            <p className="mt-1" style={{ color:"hsl(258 30% 55%)" }}>Make sure RESEND_API_KEY is set in Vercel env vars.</p>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT: Private links */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-medium uppercase tracking-widest" style={{ color:"hsl(38 8% 44%)" }}>
+            Private Links
+          </p>
+          <button onClick={() => setShowLinkForm(!showLinkForm)}
+            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg"
+            style={{ background:"hsl(222 18% 13%)", color:"hsl(38 8% 55%)", border:"1px solid hsl(222 18% 18%)" }}>
+            <Plus size={11}/> New Link
+          </button>
+        </div>
+
+        {/* New link form */}
+        <AnimatePresence>
+          {showLinkForm && (
+            <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }}
+              exit={{ height:0, opacity:0 }} className="overflow-hidden mb-3">
+              <div className="rounded-xl border p-3 space-y-2"
+                style={{ background:"hsl(222 18% 6%)", borderColor:"hsl(222 18% 14%)" }}>
+                <div className="flex gap-2">
+                  <input placeholder="Client name *" value={newClient.name}
+                    onChange={e => setNewClient(n => ({...n, name:e.target.value}))} style={rowInp}/>
+                  <input placeholder="Email (for OTP)" value={newClient.email}
+                    onChange={e => setNewClient(n => ({...n, email:e.target.value}))} style={rowInp}/>
+                </div>
+                <div className="flex gap-2">
+                  <input placeholder="Note (optional)" value={newClient.note}
+                    onChange={e => setNewClient(n => ({...n, note:e.target.value}))} style={rowInp}/>
+                  <input type="date" title="Expiry (optional)" value={newClient.expires}
+                    onChange={e => setNewClient(n => ({...n, expires:e.target.value}))} style={rowInp}/>
+                </div>
+                <button onClick={generateLink} disabled={!newClient.name || generating}
+                  className="w-full py-1.5 rounded-lg text-xs font-medium"
+                  style={{ background:"hsl(38 65% 58%)", color:"hsl(222 24% 5%)", opacity:!newClient.name?0.4:1 }}>
+                  {generating ? "Generating…" : "Generate Link"}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Links list */}
+        {!linksLoaded ? (
+          <div className="text-xs text-center py-4" style={{ color:"hsl(38 8% 36%)" }}>Loading…</div>
+        ) : links.length === 0 ? (
+          <div className="rounded-xl border border-dashed py-5 text-center"
+            style={{ borderColor:"hsl(222 18% 16%)" }}>
+            <Link2 size={16} className="mx-auto mb-1.5" style={{ color:"hsl(38 8% 30%)" }}/>
+            <p className="text-xs" style={{ color:"hsl(38 8% 38%)" }}>No private links yet</p>
+            <p className="text-[11px] mt-0.5" style={{ color:"hsl(38 8% 28%)" }}>Generate one for each client</p>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-52 overflow-y-auto">
+            {links.map(l => {
+              const expired = l.expires_at && new Date(l.expires_at) < new Date();
+              const url = `${origin}/p/${l.token}`;
+              return (
+                <div key={l.id} className="flex items-center gap-2 rounded-xl p-2.5"
+                  style={{ background:"hsl(222 18% 11%)", border:"1px solid hsl(222 18% 15%)", opacity: expired ? 0.5 : 1 }}>
+                  <UserCircle2 size={14} style={{ color:"hsl(38 8% 40%)", flexShrink:0 }}/>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color:"hsl(38 12% 70%)" }}>
+                      {l.client_name}
+                      {expired && <span className="ml-1.5 text-[10px]" style={{ color:"hsl(0 60% 55%)" }}>expired</span>}
+                    </p>
+                    <p className="text-[10px] truncate" style={{ color:"hsl(38 8% 38%)" }}>{url}</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => copyLink(l.token)}
+                      className="p-1.5 rounded-lg transition-all"
+                      style={{ color: copied===l.token ? "hsl(142 55% 55%)" : "hsl(38 8% 44%)",
+                        background: copied===l.token ? "hsl(142 55% 40%/0.1)" : "transparent" }}>
+                      {copied===l.token ? <CheckCircle2 size={12}/> : <Copy size={12}/>}
+                    </button>
+                    <a href={url} target="_blank" rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg" style={{ color:"hsl(38 8% 38%)" }}>
+                      <ExternalLink size={12}/>
+                    </a>
+                    <button onClick={async () => { await deleteLink(l.id); await loadLinks(); }}
+                      className="p-1.5 rounded-lg" style={{ color:"hsl(0 55% 50%/0.5)" }}
+                      onMouseEnter={e => e.currentTarget.style.color="hsl(0 65% 58%)"}
+                      onMouseLeave={e => e.currentTarget.style.color="hsl(0 55% 50%/0.5)"}>
+                      <Trash2 size={11}/>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
-//  ADD PROJECT MODAL  — with live card preview
+//  ADD PROJECT MODAL  — with live card preview + dual images + access defaults
 // ══════════════════════════════════════════════════════════════════════════════
+interface NewProject {
+  title: string; description: string; long_description: string;
+  stream_url: string; type: ProjectType; location: string;
+  year: string; featured: boolean; sort_order: number;
+  imageFile: File | null; imagePreview: string;
+  imageDarkFile: File | null; imageDarkPreview: string;
+  imageLightFile: File | null; imageLightPreview: string;
+  access_type: AccessType; access_password: string;
+}
+
+const BLANK: NewProject = {
+  title: "", description: "", long_description: "", stream_url: "",
+  type: "Residential", location: "", year: new Date().getFullYear().toString(),
+  featured: false, sort_order: 0,
+  imageFile: null, imagePreview: "",
+  imageDarkFile: null, imageDarkPreview: "",
+  imageLightFile: null, imageLightPreview: "",
+  access_type: "public", access_password: "",
+};
+
 function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:()=>void }) {
   const [form, setForm]         = useState<NewProject>({...BLANK});
   const [dragging, setDragging] = useState(false);
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef      = useRef<HTMLInputElement>(null);
+  const fileDarkRef  = useRef<HTMLInputElement>(null);
+  const fileLightRef = useRef<HTMLInputElement>(null);
 
   const set = (k: keyof NewProject, v: NewProject[keyof NewProject]) =>
     setForm(f => ({...f, [k]:v}));
 
-  const handleFile = useCallback((file: File) => {
+  const handleFile = useCallback((file: File, mode: "main"|"dark"|"light") => {
     if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
-    reader.onload = e => set("imagePreview", e.target?.result as string);
+    reader.onload = e => {
+      const r = e.target?.result as string;
+      if (mode === "main")  { set("imageFile", file);      set("imagePreview", r); }
+      if (mode === "dark")  { set("imageDarkFile", file);  set("imageDarkPreview", r); }
+      if (mode === "light") { set("imageLightFile", file); set("imageLightPreview", r); }
+    };
     reader.readAsDataURL(file);
-    set("imageFile", file);
   }, []);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragging(false);
-    const file = e.dataTransfer.files[0]; if (file) handleFile(file);
+    const file = e.dataTransfer.files[0]; if (file) handleFile(file, "main");
   };
 
   const isValid = form.title && form.description && form.location && form.imageFile;
@@ -604,109 +891,73 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
     const { error: err } = await createProject(
       { title:form.title, description:form.description, long_description:form.long_description,
         stream_url:form.stream_url, type:form.type, location:form.location,
-        year:form.year, featured:form.featured, sort_order:Date.now() },
-      form.imageFile
+        year:form.year, featured:form.featured, sort_order:Date.now(),
+        access_type:form.access_type, access_password:form.access_password },
+      form.imageFile,
+      form.imageDarkFile,
+      form.imageLightFile,
     );
     if (err) { setError(err); setSaving(false); return; }
     onCreated();
   };
 
-  // ── Card Preview ────────────────────────────────────────────────────────────
-  const CardPreview = () => (
-    <div className="rounded-2xl overflow-hidden border"
-      style={{ background:"hsl(222 20% 9%)", borderColor:"hsl(222 18% 15%)" }}>
-      <div className="relative overflow-hidden" style={{ aspectRatio:"16/9", background:"hsl(222 18% 12%)" }}>
-        {form.imagePreview
-          ? <img src={form.imagePreview} alt="" className="w-full h-full object-cover"/>
-          : <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"
-              style={{ color:"hsl(38 8% 30%)" }}>
-              <ImageIcon size={24}/><span className="text-xs">Image preview</span>
-            </div>
-        }
-        <div className="absolute inset-0" style={{ background:"linear-gradient(to bottom, transparent 50%, hsl(222 20% 9%/0.85))" }}/>
-        {form.featured && (
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
-            style={{ background:"hsl(38 65% 58%)", color:"hsl(222 24% 5%)" }}>
-            <Sparkles size={8}/> Featured
-          </div>
-        )}
-        <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px]"
-          style={{ background:"hsl(222 20% 9%/0.8)", color:"hsl(38 8% 55%)", border:"1px solid hsl(222 18% 22%)" }}>
-          {form.type}
+  const MiniDrop = ({ mode, label, preview }: { mode:"dark"|"light"; label:string; preview:string }) => {
+    const ref = mode === "dark" ? fileDarkRef : fileLightRef;
+    return (
+      <div>
+        <label className="block text-xs mb-1.5" style={{ color:"hsl(38 8% 42%)" }}>{label}</label>
+        <div className="h-20 rounded-xl border-2 border-dashed cursor-pointer overflow-hidden relative flex items-center justify-center"
+          style={{ borderColor: preview ? "hsl(38 50% 40%/0.5)" : "hsl(222 18% 18%)", background:"hsl(222 18% 6%)" }}
+          onClick={() => ref.current?.click()}>
+          <input ref={ref} type="file" accept="image/*" className="hidden"
+            onChange={e => { const f=e.target.files?.[0]; if(f) handleFile(f, mode); }}/>
+          {preview
+            ? <img src={preview} alt="" className="absolute inset-0 w-full h-full object-cover"/>
+            : <div className="flex flex-col items-center gap-1" style={{ color:"hsl(38 8% 32%)" }}>
+                {mode==="dark" ? <Moon size={16}/> : <Sun size={16}/>}
+                <span className="text-[10px]">Click to upload</span>
+              </div>
+          }
         </div>
       </div>
-      <div className="p-4">
-        <h3 className="font-light mb-1 leading-tight"
-          style={{ fontFamily:"var(--font-display)", fontSize:"1.05rem", color:"hsl(38 15% 88%)" }}>
-          {form.title || <span style={{ color:"hsl(38 8% 30%)" }}>Project title…</span>}
-        </h3>
-        <p className="text-xs leading-relaxed mb-3 line-clamp-2" style={{ color:"hsl(38 8% 48%)" }}>
-          {form.description || <span style={{ color:"hsl(38 8% 28%)" }}>Short description…</span>}
-        </p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-[10px]" style={{ color:"hsl(38 8% 38%)" }}>
-            <span className="flex items-center gap-1"><MapPin size={9}/>{form.location||"Location"}</span>
-            <span>{form.year}</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full"
-            style={{ background:"hsl(38 65% 58%/0.08)", color:"hsl(38 55% 58%)", border:"1px solid hsl(38 50% 40%/0.2)" }}>
-            View <ArrowRight size={9}/>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
       <motion.div className="absolute inset-0" style={{ background:"hsl(222 24% 3%/0.85)", backdropFilter:"blur(8px)" }}
         onClick={onClose}/>
-
-      {/* Wide panel: form on left, preview on right */}
       <motion.div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border"
         style={{ background:"hsl(222 22% 7%)", borderColor:"hsl(222 18% 14%)", boxShadow:"0 32px 80px hsl(222 24% 2%/0.7)" }}
         initial={{ opacity:0, y:24, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }}
         exit={{ opacity:0, y:12, scale:0.97 }} transition={{ duration:0.35, ease:[0.16,1,0.3,1] }}>
 
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b sticky top-0 z-10"
           style={{ borderColor:"hsl(222 18% 12%)", background:"hsl(222 22% 7%)" }}>
           <div>
-            <h2 className="text-lg font-light" style={{ fontFamily:"var(--font-display)", color:"hsl(38 15% 88%)" }}>
-              Add New Project
-            </h2>
-            <p className="text-xs mt-0.5" style={{ color:"hsl(38 8% 44%)" }}>
-              Publishes instantly — no redeploy needed
-            </p>
+            <h2 className="text-lg font-light" style={{ fontFamily:"var(--font-display)", color:"hsl(38 15% 88%)" }}>Add New Project</h2>
+            <p className="text-xs mt-0.5" style={{ color:"hsl(38 8% 44%)" }}>Publishes instantly — no redeploy needed</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl" style={{ color:"hsl(38 8% 40%)" }}>
-            <X size={16}/>
-          </button>
+          <button onClick={onClose} className="p-2 rounded-xl" style={{ color:"hsl(38 8% 40%)" }}><X size={16}/></button>
         </div>
 
-        {/* Two-column body */}
         <div className="grid lg:grid-cols-[1fr_280px] gap-0">
-
-          {/* LEFT — form */}
+          {/* LEFT */}
           <div className="p-6 space-y-5 border-r" style={{ borderColor:"hsl(222 18% 12%)" }}>
 
-            {/* Image drop */}
+            {/* Main image */}
             <div>
-              <label className="block text-xs font-medium uppercase tracking-widest mb-2"
-                style={{ color:"hsl(38 8% 44%)" }}>Thumbnail Image *</label>
-              <div
-                className="rounded-xl border-2 border-dashed transition-all cursor-pointer overflow-hidden"
-                style={{
-                  borderColor: dragging ? "hsl(38 65% 58%)" : "hsl(222 18% 18%)",
-                  background: dragging ? "hsl(38 65% 58%/0.05)" : "hsl(222 18% 6%)",
-                }}
+              <label className="block text-xs font-medium uppercase tracking-widest mb-2" style={{ color:"hsl(38 8% 44%)" }}>
+                Main Thumbnail *
+              </label>
+              <div className="rounded-xl border-2 border-dashed transition-all cursor-pointer overflow-hidden"
+                style={{ borderColor: dragging ? "hsl(38 65% 58%)" : "hsl(222 18% 18%)", background: dragging ? "hsl(38 65% 58%/0.05)" : "hsl(222 18% 6%)" }}
                 onDragOver={e => { e.preventDefault(); setDragging(true); }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={onDrop}
+                onDragLeave={() => setDragging(false)} onDrop={onDrop}
                 onClick={() => fileRef.current?.click()}>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden"
-                  onChange={e => { const f=e.target.files?.[0]; if(f) handleFile(f); }}/>
+                  onChange={e => { const f=e.target.files?.[0]; if(f) handleFile(f,"main"); }}/>
                 {form.imagePreview ? (
                   <div className="relative h-36">
                     <img src={form.imagePreview} alt="" className="w-full h-full object-cover"/>
@@ -716,9 +967,7 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
                       <Trash2 size={11}/>
                     </button>
                     <div className="absolute bottom-0 inset-x-0 py-1 px-3 text-[11px]"
-                      style={{ background:"hsl(222 22% 8%/0.9)", color:"hsl(142 55% 55%)" }}>
-                      ✓ Ready to upload
-                    </div>
+                      style={{ background:"hsl(222 22% 8%/0.9)", color:"hsl(142 55% 55%)" }}>✓ Ready to upload</div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-2 py-7"
@@ -730,7 +979,17 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
               </div>
             </div>
 
-            {/* Fields */}
+            {/* Theme-specific images */}
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-widest mb-2" style={{ color:"hsl(38 8% 44%)" }}>
+                Theme Thumbnails <span style={{ color:"hsl(38 8% 30%)", fontWeight:400 }}>(optional — override main by mode)</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <MiniDrop mode="dark"  label="🌙 Dark mode image"  preview={form.imageDarkPreview}/>
+                <MiniDrop mode="light" label="☀️ Light mode image" preview={form.imageLightPreview}/>
+              </div>
+            </div>
+
             <IField label="Project Name *" icon={<Tag size={11}/>}>
               <input type="text" placeholder="e.g. Zenith Tower" value={form.title}
                 onChange={e => set("title",e.target.value)} {...inp}/>
@@ -776,6 +1035,29 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
                 </div>
               </IField>
             </div>
+
+            {/* Access type */}
+            <IField label="Default Access" hint="Can be changed per-link later">
+              <div className="flex gap-2">
+                {(["public","password","otp"] as AccessType[]).map(t => (
+                  <button key={t} onClick={() => set("access_type",t)}
+                    className="flex-1 py-2 rounded-xl text-xs font-medium capitalize transition-all"
+                    style={{
+                      background: form.access_type===t ? "hsl(38 65% 58%)" : "hsl(222 18% 12%)",
+                      color: form.access_type===t ? "hsl(222 24% 5%)" : "hsl(38 8% 48%)",
+                      border:`1px solid ${form.access_type===t ? "hsl(38 50% 45%)" : "hsl(222 18% 18%)"}`,
+                    }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              {form.access_type === "password" && (
+                <input type="text" placeholder="Set password…" value={form.access_password}
+                  onChange={e => set("access_password",e.target.value)} {...inp}
+                  style={{...inp.style, marginTop:8}}/>
+              )}
+            </IField>
+
             <IField label="🔒 Vagon Stream URL" hint="Admin-only" icon={<Link2 size={11}/>}>
               <input type="url" placeholder="https://streams.vagon.io/streams/…"
                 value={form.stream_url} onChange={e => set("stream_url",e.target.value)} {...inp}/>
@@ -797,34 +1079,50 @@ function AddProjectModal({ onClose, onCreated }: { onClose:()=>void; onCreated:(
               whileHover={isValid&&!saving ? { y:-1 } : {}} whileTap={isValid&&!saving ? { scale:0.98 } : {}}>
               {saving
                 ? <><div className="w-4 h-4 border-2 rounded-full animate-spin"
-                    style={{ borderColor:"hsl(222 24% 20%)", borderTopColor:"hsl(222 24% 5%)" }}/> Uploading…</>
+                    style={{ borderColor:"hsl(222 24% 20%)", borderTopColor:"hsl(222 24% 5%)"}}/> Uploading…</>
                 : <><Sparkles size={14}/> Publish Project</>}
             </motion.button>
-            {!isValid && (
-              <p className="text-center text-xs" style={{ color:"hsl(38 8% 38%)" }}>
-                Image, Name, Description and Location are required
-              </p>
-            )}
           </div>
 
-          {/* RIGHT — live card preview */}
+          {/* RIGHT — preview */}
           <div className="p-6">
-            <p className="text-xs uppercase tracking-widest mb-3" style={{ color:"hsl(38 8% 36%)" }}>
-              Live Preview
-            </p>
-            <CardPreview/>
-            {form.title && (
-              <p className="text-[11px] mt-3 text-center" style={{ color:"hsl(38 8% 35%)" }}>
-                ID: <span style={{ color:"hsl(38 45% 48%)" }}>
-                  {form.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
-                </span>
-              </p>
-            )}
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color:"hsl(38 8% 36%)" }}>Live Preview</p>
+            <div className="rounded-2xl overflow-hidden border" style={{ background:"hsl(222 20% 9%)", borderColor:"hsl(222 18% 15%)" }}>
+              <div className="relative overflow-hidden" style={{ aspectRatio:"16/9", background:"hsl(222 18% 12%)" }}>
+                {form.imagePreview
+                  ? <img src={form.imagePreview} alt="" className="w-full h-full object-cover"/>
+                  : <div className="absolute inset-0 flex flex-col items-center justify-center gap-2" style={{ color:"hsl(38 8% 30%)" }}>
+                      <ImageIcon size={24}/><span className="text-xs">Image preview</span>
+                    </div>
+                }
+                <div className="absolute inset-0" style={{ background:"linear-gradient(to bottom, transparent 50%, hsl(222 20% 9%/0.85))" }}/>
+                {form.featured && (
+                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                    style={{ background:"hsl(38 65% 58%)", color:"hsl(222 24% 5%)" }}>
+                    <Sparkles size={8}/> Featured
+                  </div>
+                )}
+                <AccessBadge type={form.access_type}/>
+              </div>
+              <div className="p-4">
+                <h3 className="font-light mb-1 leading-tight" style={{ fontFamily:"var(--font-display)", fontSize:"1.05rem", color:"hsl(38 15% 88%)" }}>
+                  {form.title || <span style={{ color:"hsl(38 8% 30%)" }}>Project title…</span>}
+                </h3>
+                <p className="text-xs leading-relaxed mb-3" style={{ color:"hsl(38 8% 48%)" }}>
+                  {form.description || <span style={{ color:"hsl(38 8% 28%)" }}>Short description…</span>}
+                </p>
+                <div className="flex items-center gap-3 text-[10px]" style={{ color:"hsl(38 8% 38%)" }}>
+                  <span>{form.location || "Location"}</span>
+                  <span>{form.year}</span>
+                </div>
+              </div>
+            </div>
             <div className="mt-4 rounded-xl p-3 text-xs space-y-1" style={{ background:"hsl(222 18% 11%)", color:"hsl(38 8% 42%)" }}>
-              <p className="font-medium" style={{ color:"hsl(38 8% 55%)" }}>What gets published:</p>
-              <p>{form.imageFile ? "✓" : "○"} Thumbnail image</p>
-              <p>{form.title ? "✓" : "○"} Project card</p>
+              <p>{form.imageFile ? "✓" : "○"} Main thumbnail</p>
+              <p>{form.imageDarkFile ? "✓" : "○"} Dark mode image</p>
+              <p>{form.imageLightFile ? "✓" : "○"} Light mode image</p>
               <p>{form.stream_url ? "✓" : "○"} Vagon stream URL</p>
+              <p>Access: <span style={{ color:"hsl(38 45% 55%)" }}>{form.access_type}</span></p>
             </div>
           </div>
         </div>
