@@ -1,174 +1,203 @@
-# ArchViz Studio — Interactive Architecture Experiences
+<div align="center">
 
-A modern production-ready platform for hosting multiple Unreal Engine Pixel Streaming architectural visualization projects.
+# ✦ VastuChitra ArchViz
 
-## Tech Stack
+**A production-ready platform for hosting Unreal Engine architectural visualization experiences**
 
-- **Framework**: Next.js 14 (App Router)
-- **Styling**: Tailwind CSS with custom design tokens
-- **Animation**: Framer Motion
-- **Fonts**: Cormorant Garamond (display) + DM Sans (body) + DM Mono
-- **Theme**: next-themes (dark/light with animated transitions)
-- **Backend**: Supabase (visitor data collection)
-- **Deployment**: Vercel
+Built with Next.js 14 · Supabase · Framer Motion · Vercel
+
+[Live Site](https://vastuchitra.vercel.app) · [Admin Panel](/admin) · [Manual](./MANUAL.docx)
+
+</div>
+
+---
+
+## What This Is
+
+VastuChitra ArchViz is a full-stack platform that turns Vagon Pixel Streaming URLs into a polished, client-facing architectural showcase. Projects are managed entirely through an admin panel — no code changes or redeploys needed to publish, edit, or gate a project.
+
+Clients get a branded experience: browse projects, fill a lead form, and launch a live Unreal Engine walkthrough in a new tab. High-value projects can be locked behind a password or SMS OTP before the stream opens.
+
+---
 
 ## Features
 
-- ✦ Stunning hero with animated gradient mesh background
-- ✦ Project grid with 3-col → 2-col → 1-col responsive layout
-- ✦ Filterable by project type with animated pill transitions
-- ✦ Hover effects: scale, glow shadow, icon reveal
-- ✦ Visitor data collection modal before stream launch
-- ✦ Supabase integration for visitor analytics
-- ✦ Dark/light mode toggle with icon swap animation
-- ✦ Custom cursor with hover morphing (desktop only)
-- ✦ Mobile haptic feedback on all interactive elements
-- ✦ Fully accessible: keyboard navigation, aria labels, semantic HTML
-- ✦ Architectural SVG illustrations per project type
-- ✦ Scroll-parallax hero with fade-out on scroll
-- ✦ Floating HUD cards with looping float animation
+| Category | What's included |
+|---|---|
+| **Public site** | Hero with animated canvas background, filterable project grid, about + contact sections, dark/light mode |
+| **Project cards** | 5 hover effects (glow, tilt, tint, lift, border-trace), dual dark/light thumbnails, access type badges |
+| **Lead capture** | Visitor form (name + email + phone) before stream launch — saved to Supabase |
+| **Access control** | Per-project: Public, Password-protected, or SMS OTP |
+| **OTP delivery** | Twilio → Vonage → Resend email fallback chain |
+| **Private links** | Per-client tokenised URLs (`/p/[token]`) with optional expiry |
+| **Admin panel** | 4 tabs: Projects (CRUD + access), Visitors (analytics), Site Config (CMS), Debug (visual) |
+| **Live CMS** | All brand text, hero copy, contact details editable from admin — no redeploy |
+| **Visual builder** | 5 font stacks, 10 colour themes, 4 hero variants, 5 carousel styles, 6 cursor variants |
+| **Custom cursor** | dot-ring, magnetic, xray, ink-drop, torch, precision (desktop only) |
 
 ---
 
-## Quick Start
+## Tech Stack
 
-### 1. Clone and install
+- **Framework** — Next.js 14 (App Router)
+- **Language** — TypeScript
+- **Styling** — Tailwind CSS, Framer Motion
+- **Fonts** — Cormorant Garamond (display) + DM Sans (body) + DM Mono
+- **Database** — Supabase (Postgres + Storage)
+- **Email** — Resend
+- **SMS** — Twilio + Vonage (fallback)
+- **Deployment** — Vercel
 
-```bash
-git clone <your-repo>
-cd archviz-platform
-npm install
+---
+
+## Project Structure
+
+```
+archviz-platform/
+├── app/
+│   ├── layout.tsx              # Root layout — fonts, providers, cursor, navbar
+│   ├── page.tsx                # Public homepage
+│   ├── admin/page.tsx          # Admin panel (password-protected)
+│   ├── p/[token]/page.tsx      # Private client link pages
+│   └── api/
+│       ├── admin-auth/         # POST — password validation (SHA-256)
+│       ├── send-email/         # POST — Resend transactional email
+│       └── send-otp/           # POST — Twilio → Vonage → Resend OTP
+├── components/
+│   ├── SiteConfigProvider.tsx  # Global CMS context (loads from Supabase)
+│   ├── DebugPanel.tsx          # 8-tab live visual customiser
+│   ├── LaunchModal.tsx         # Visitor form + access gate (public/pw/otp)
+│   ├── ProjectCard.tsx         # Card with 5 hover variants + dual thumbnails
+│   ├── ProjectCarousel.tsx     # Mobile/featured carousel
+│   ├── CustomCursor.tsx        # 6-variant animated cursor
+│   ├── Hero.tsx, Navbar.tsx, About.tsx, Contact.tsx, Footer.tsx
+│   └── BackgroundCanvas.tsx    # WebGL gradient mesh animation
+├── lib/
+│   ├── supabase.ts             # All DB/storage functions
+│   └── utils.ts                # cn() + haptic()
+├── styles/globals.css          # Tailwind base + CSS custom properties
+└── SCHEMA_V2.sql               # Full database setup SQL
 ```
 
-### 2. Set up Supabase
+---
 
-1. Go to [supabase.com](https://supabase.com) and create a new project
-2. In the SQL Editor, run the contents of `supabase-schema.sql`
-3. Copy your project URL and anon key from **Settings → API**
+## Database (Supabase)
 
-### 3. Configure environment
+Five tables, all with RLS enabled:
 
-```bash
-cp .env.local.example .env.local
-```
+- **`projects`** — title, description, images (main/dark/light), stream URL, access type + password, sort order
+- **`project_links`** — per-client tokenised links with optional expiry
+- **`otp_codes`** — 6-digit codes, 10-minute expiry, single-use
+- **`visitors`** — lead capture: name, email, phone, project, timestamp
+- **`site_settings`** — JSON key/value: `site_config`, `debug_layout`, `debug_presets`
 
-Edit `.env.local`:
+Storage bucket: **`project-images`** (public CDN) — images auto-deleted when a project is deleted.
+
+---
+
+## Access Control Flows
+
+**Public** → Name + Email + Phone → stream launches
+
+**Password** → Name + Email + Phone + Password → if wrong, shows "Contact Sales" popup with email + call buttons
+
+**OTP** → Name + Email + Phone + [Send Code] → 6-box SMS code entry → verified → stream launches  
+OTP delivery: Twilio SMS → Vonage SMS → Resend email (each tried if previous fails)
+
+---
+
+## Environment Variables
+
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+# Required
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+ADMIN_PASSWORD_HASH=          # SHA-256 hex of your admin password
+RESEND_API_KEY=
+
+# SMS OTP (optional — falls back to email without these)
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+VONAGE_API_KEY=
+VONAGE_API_SECRET=
+VONAGE_SENDER_ID=
+
+# Email sender (optional — defaults to onboarding@resend.dev without custom domain)
+EMAIL_FROM=noreply@yourdomain.com
 ```
 
-### 4. Add your projects
-
-Edit `data/projects.ts` — replace the placeholder `streamURL` values with your actual Vagon Pixel Streaming URLs:
-
-```ts
-{
-  id: "luminara-tower",
-  title: "Luminara Tower",
-  streamURL: "https://vagon.io/stream/YOUR_ACTUAL_STREAM_ID",
-  // ...
-}
-```
-
-### 5. Add project images
-
-Place project preview images in `/public/projects/`:
-- `tower.jpg`
-- `pavilion.jpg`
-- `villa.jpg`
-- `district.jpg`
-- `resort.jpg`
-- `museum.jpg`
-
-Recommended size: **800×600px** or **1200×900px** (4:3 ratio)
-
-### 6. Run locally
-
+Generate `ADMIN_PASSWORD_HASH`:
 ```bash
-npm run dev
+echo -n 'your-password' | sha256sum
 ```
-
-Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## Deployment (Vercel)
+## Setup
+
+### 1. Supabase
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Run `SCHEMA_V2.sql` in the SQL Editor
+3. Confirm the `project-images` storage bucket is set to **Public**
+
+### 2. Vercel
 
 ```bash
 npm install -g vercel
 vercel --prod
 ```
 
-Add your environment variables in **Vercel → Settings → Environment Variables**.
+Add all environment variables in **Vercel → Settings → Environment Variables**, then redeploy.
 
----
+### 3. Local dev
 
-## Customization
-
-### Colors
-Edit `styles/globals.css` — CSS custom properties under `:root` and `.dark`.
-
-### Projects
-Add/edit/remove entries in `data/projects.ts`.
-
-### Fonts
-Change Google Fonts imports in `styles/globals.css` and `--font-display` / `--font-body` variables.
-
-### Stream behavior
-By default, streams open in a new tab. To embed via iframe, modify `LaunchModal.tsx`.
-
----
-
-## Supabase Analytics
-
-Query your visitor data:
-
-```sql
--- All visits
-SELECT * FROM visitors ORDER BY timestamp DESC;
-
--- Visits per project
-SELECT * FROM visitor_analytics;
-
--- Unique visitors this week
-SELECT COUNT(DISTINCT email) FROM visitors
-WHERE timestamp > NOW() - INTERVAL '7 days';
+```bash
+npm install
+# create .env.local with NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
+npm run dev
+# → http://localhost:3000
 ```
 
 ---
 
-## Folder Structure
+## Admin Panel
 
-```
-archviz-platform/
-├── app/
-│   ├── layout.tsx         # Root layout with fonts, theme, cursor
-│   └── page.tsx           # Main page (Hero + Grid + About + Contact)
-├── components/
-│   ├── Navbar.tsx          # Sticky nav with scroll behavior
-│   ├── Hero.tsx            # Full-viewport animated hero
-│   ├── ProjectGrid.tsx     # Filterable project grid
-│   ├── ProjectCard.tsx     # Individual project card with hover
-│   ├── LaunchModal.tsx     # Visitor form modal + stream launch
-│   ├── About.tsx           # Technology section
-│   ├── Contact.tsx         # Contact form section
-│   ├── Footer.tsx          # Site footer
-│   ├── ThemeToggle.tsx     # Dark/light mode toggle
-│   ├── ThemeProvider.tsx   # next-themes wrapper
-│   ├── CustomCursor.tsx    # Animated desktop cursor
-│   └── ui/
-│       └── Toaster.tsx     # Toast notifications
-├── data/
-│   └── projects.ts         # Project data config
-├── lib/
-│   ├── supabase.ts         # Supabase client + visitor save
-│   └── utils.ts            # cn() + haptic()
-├── styles/
-│   └── globals.css         # Tailwind + design tokens + fonts
-├── supabase-schema.sql     # Run in Supabase SQL Editor
-├── .env.local.example      # Environment variable template
-├── tailwind.config.ts
-├── next.config.js
-└── tsconfig.json
-```
+Visit `/admin` — enter your password. From there:
+
+- **Projects tab** — add, edit, delete, reorder projects. Set access type per project. Generate private client links.
+- **Visitors tab** — view lead capture data and per-project stats.
+- **Site Config tab** — edit all brand text, hero copy, contact details, and card hover effect. Saves to Supabase — live instantly.
+- **Debug tab** — change fonts, colour themes, hero layout, carousel style, cursor variant. All saved to Supabase.
+
+---
+
+## Private Client Links
+
+From the Admin → Projects → expand a project → Private Links panel:
+
+- Enter client name, email, optional note, optional expiry date → **Generate Link**
+- Share the `/p/[token]` URL with your client
+- The page shows only their project with the same access control as the main site
+- Expired tokens show a clean error page
+
+---
+
+## Customisation
+
+| What | Where |
+|---|---|
+| Brand name + favicon | Admin → Site Config |
+| Hero headline + CTA text | Admin → Site Config |
+| Colour theme | Admin → Debug → Dark/Light themes |
+| Font stack | Admin → Debug → Fonts |
+| Card hover style | Admin → Site Config → Card Effect |
+| Sales contact (password error popup) | `components/LaunchModal.tsx` — `SALES_EMAIL` + `SALES_PHONE` constants |
+| Project types list | `lib/supabase.ts` — `ProjectType` union |
+
+---
+
+<div align="center">
+<sub>VastuChitra ArchViz · Built with Next.js 14 + Supabase + Vercel</sub>
+</div>
