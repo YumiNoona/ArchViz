@@ -7,11 +7,11 @@ import { Project } from "@/lib/supabase";
 import { useSiteConfig } from "./SiteConfigProvider";
 
 const typeColors: Record<string, { bg: string; text: string; border: string }> = {
-  Residential: { bg: "hsl(142 40% 35% / 0.12)", text: "hsl(142 55% 55%)", border: "hsl(142 40% 40% / 0.25)" },
-  Commercial:  { bg: "hsl(210 60% 45% / 0.12)", text: "hsl(210 70% 62%)", border: "hsl(210 60% 50% / 0.25)" },
-  "Mixed-Use": { bg: "hsl(38 65% 50% / 0.12)",  text: "hsl(38 75% 62%)",  border: "hsl(38 65% 55% / 0.3)"  },
-  Hospitality: { bg: "hsl(290 45% 45% / 0.12)", text: "hsl(290 55% 68%)", border: "hsl(290 45% 50% / 0.25)" },
-  Cultural:    { bg: "hsl(0 55% 50% / 0.12)",   text: "hsl(0 65% 65%)",   border: "hsl(0 55% 52% / 0.25)"  },
+  Residential: { bg: "hsl(38 70% 62% / 0.1)",  text: "hsl(38 70% 62%)",  border: "hsl(38 70% 62% / 0.2)"  },
+  Commercial:  { bg: "hsl(25 60% 55% / 0.1)",  text: "hsl(25 65% 62%)",  border: "hsl(25 60% 55% / 0.2)"  },
+  "Mixed-Use": { bg: "hsl(42 55% 58% / 0.1)",  text: "hsl(42 60% 65%)",  border: "hsl(42 55% 58% / 0.2)"  },
+  Hospitality: { bg: "hsl(16 60% 52% / 0.1)",  text: "hsl(16 65% 60%)",  border: "hsl(16 60% 52% / 0.2)"  },
+  Cultural:    { bg: "hsl(48 55% 58% / 0.1)",  text: "hsl(48 60% 65%)",  border: "hsl(48 55% 58% / 0.2)"  },
 };
 
 interface Props { project: Project; index: number; onLaunch: (p: Project) => void; }
@@ -44,9 +44,9 @@ export default function ProjectCard({ project, index, onLaunch }: Props) {
   // ── Per-effect styles ────────────────────────────────────────────────────────
   const getCardStyle = () => {
     const base = {
-      background: "hsl(222 22% 7%)",
-      borderColor: "hsl(222 18% 13%)",
-      boxShadow: "0 4px 20px hsl(222 24% 3% / 0.4)",
+      background: "hsl(var(--surface-1))",
+      borderColor: "hsl(var(--border))",
+      boxShadow: "0 4px 20px hsl(0 0% 0% / 0.15)",
       transition: "border-color 0.35s, box-shadow 0.35s, filter 0.35s",
     };
     if (!hovered) return base;

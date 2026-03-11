@@ -83,9 +83,9 @@ export const DEFAULT_CONFIG: SiteConfig = {
   brand:          "VastuChitra ArchViz",
   faviconUrl:     "",
   heroImageUrl:   "",
-  eyebrow:        "Unreal Engine · Pixel Streaming",
-  headline:       ["Immersive", "Architecture", "Experiences"],
-  sub:            "Walk through every space before a single brick is laid. Photorealistic real-time environments streamed to any browser.",
+  eyebrow:        "Architectural Visualisation Studio",
+  headline:       ["Experience", "Architecture", "Before It's Built"],
+  sub:            "We create immersive 3D walkthroughs that help developers, investors, and buyers explore every space with confidence — before construction begins.",
   cta:            "Explore Projects",
   ctaSecondary:   "Watch Demo",
   stats: [

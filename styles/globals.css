@@ -2,60 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Font vars — overrideable by DebugPanel ─────────── */
+/* ─── Google Fonts ───────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+/* ─── Font vars ──────────────────────────────────────── */
 :root {
-  --font-display: var(--font-cormorant, Georgia, serif);
-  --font-body: var(--font-dm-sans, system-ui, sans-serif);
-  --font-mono: var(--font-dm-mono, monospace);
+  --font-display: var(--font-cormorant, 'Playfair Display', Georgia, serif);
+  --font-body:    var(--font-dm-sans, 'Outfit', system-ui, sans-serif);
+  --font-mono:    var(--font-dm-mono, 'DM Mono', monospace);
   --radius: 0.75rem;
 }
 
-/* ══════════ DARK (default) — Obsidian ══════════ */
-@layer base {
-  :root, .dark {
-    --background: 240 15% 6%;
-    --foreground: 40 18% 91%;
-    --card: 240 14% 9%;
-    --card-foreground: 40 18% 91%;
-    --popover: 240 14% 9%;
-    --popover-foreground: 40 18% 91%;
-    --primary: 258 78% 70%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 12% 13%;
-    --secondary-foreground: 40 12% 78%;
-    --muted: 240 12% 13%;
-    --muted-foreground: 240 6% 50%;
-    --accent: 258 78% 70%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 56%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 240 10% 14%;
-    --input: 240 10% 14%;
-    --ring: 258 78% 70%;
-  }
+/* ══════════════════════════════════════════════════════
+   DARK MODE  — Ash / Charcoal / Warm White
+   No purple, no blue. Pure dark architecture.
+   ══════════════════════════════════════════════════════ */
+:root, .dark {
+  --background:          16 8% 7%;         /* near-black charcoal  */
+  --foreground:          30 12% 92%;        /* warm off-white       */
+  --card:                20 6% 10%;         /* soft dark            */
+  --card-foreground:     30 12% 92%;
+  --popover:             20 6% 10%;
+  --popover-foreground:  30 12% 92%;
+  --primary:             38 70% 62%;        /* warm amber gold      */
+  --primary-foreground:  20 8% 6%;
+  --secondary:           20 5% 14%;
+  --secondary-foreground:30 10% 75%;
+  --muted:               20 5% 14%;
+  --muted-foreground:    25 6% 52%;
+  --accent:              38 70% 62%;
+  --accent-foreground:   20 8% 6%;
+  --destructive:         0 72% 56%;
+  --destructive-foreground: 0 0% 100%;
+  --border:              20 5% 15%;
+  --input:               20 5% 15%;
+  --ring:                38 70% 62%;
 
-  /* ══════════ LIGHT — Saffron (default light) ══════════ */
-  .light {
-    --background: 38 52% 95%;
-    --foreground: 220 30% 10%;
-    --card: 38 40% 91%;
-    --card-foreground: 220 30% 10%;
-    --popover: 38 60% 97%;
-    --popover-foreground: 220 30% 10%;
-    --primary: 22 92% 48%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 38 30% 86%;
-    --secondary-foreground: 220 25% 15%;
-    --muted: 38 25% 88%;
-    --muted-foreground: 220 14% 42%;
-    --accent: 22 92% 48%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 80% 52%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 38 20% 80%;
-    --input: 38 20% 80%;
-    --ring: 22 92% 48%;
-  }
+  /* Custom surface vars */
+  --surface-1:   20 6% 10%;
+  --surface-2:   20 5% 14%;
+  --surface-3:   20 4% 18%;
+  --glow-gold:   38 70% 62%;
+  --glow-warm:   28 60% 55%;
+}
+
+/* ══════════════════════════════════════════════════════
+   LIGHT MODE — Warm Cream / Sand / Amber
+   Welcoming, bright, editorial warmth.
+   ══════════════════════════════════════════════════════ */
+.light {
+  --background:          38 55% 97%;        /* warm cream           */
+  --foreground:          20 20% 10%;        /* dark charcoal        */
+  --card:                36 45% 94%;        /* slightly deeper cream */
+  --card-foreground:     20 20% 10%;
+  --popover:             38 60% 99%;
+  --popover-foreground:  20 20% 10%;
+  --primary:             28 80% 46%;        /* rich amber           */
+  --primary-foreground:  0 0% 100%;
+  --secondary:           36 30% 88%;
+  --secondary-foreground:20 18% 18%;
+  --muted:               36 30% 88%;
+  --muted-foreground:    25 15% 44%;
+  --accent:              28 80% 46%;
+  --accent-foreground:   0 0% 100%;
+  --destructive:         0 80% 52%;
+  --destructive-foreground: 0 0% 100%;
+  --border:              36 20% 82%;
+  --input:               36 20% 82%;
+  --ring:                28 80% 46%;
+
+  --surface-1:   36 40% 93%;
+  --surface-2:   35 30% 88%;
+  --surface-3:   34 25% 84%;
+  --glow-gold:   28 80% 46%;
+  --glow-warm:   32 65% 52%;
 }
 
 /* ─── Base ────────────────────────────────────────────── */
@@ -74,48 +94,146 @@
 
   h1, h2, h3, h4 { font-family: var(--font-display); }
 
-  ::selection { background: hsl(var(--primary)/0.22); color: hsl(var(--primary)); }
+  ::selection {
+    background: hsl(var(--primary)/0.18);
+    color: hsl(var(--primary));
+  }
 
   ::-webkit-scrollbar { width: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 2px;
+  }
 }
 
 /* ─── Utilities ───────────────────────────────────────── */
 @layer utilities {
-  /* Dark: violet-rose shimmer */
-  .dark .text-gradient, .text-gradient {
-    background: linear-gradient(130deg, hsl(258 80% 76%) 0%, hsl(300 65% 72%) 45%, hsl(340 68% 74%) 100%);
+
+  /* Text gradients — dark: warm gold-amber, light: deep amber */
+  .text-gradient {
+    background: linear-gradient(125deg,
+      hsl(38 72% 68%) 0%,
+      hsl(28 85% 62%) 45%,
+      hsl(42 68% 72%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  /* Light: vivid amber-rose */
   .light .text-gradient {
-    background: linear-gradient(130deg, hsl(22 92% 46%) 0%, hsl(350 78% 52%) 60%, hsl(22 92% 48%) 100%);
+    background: linear-gradient(125deg,
+      hsl(28 82% 42%) 0%,
+      hsl(18 78% 48%) 50%,
+      hsl(32 75% 44%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .text-gradient-gold {
-    background: linear-gradient(120deg, #D97706 0%, #F59E0B 50%, #D97706 100%);
+    background: linear-gradient(120deg,
+      hsl(38 65% 58%) 0%,
+      hsl(44 72% 70%) 50%,
+      hsl(36 60% 56%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
+  /* Noise texture overlay */
+  .noise-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.4;
+  }
+
+  /* Glow effects */
+  .glow-gold {
+    box-shadow: 0 0 32px hsl(var(--glow-gold)/0.18), 0 0 8px hsl(var(--glow-gold)/0.1);
+  }
   .glow-card {
     box-shadow: 0 0 0 1px hsl(var(--border));
-    transition: box-shadow 0.3s ease;
+    transition: box-shadow 0.35s ease;
   }
   .glow-card:hover {
-    box-shadow: 0 0 0 1px hsl(var(--primary)/0.28), 0 10px 50px hsl(var(--primary)/0.12), 0 2px 8px hsl(0 0% 0% / 0.18);
+    box-shadow:
+      0 0 0 1px hsl(var(--primary)/0.22),
+      0 12px 48px hsl(var(--primary)/0.1),
+      0 4px 12px hsl(0 0% 0%/0.15);
   }
 
-  .bg-primary\/8 { background-color: hsl(var(--primary)/0.08); }
-  .bg-primary\/5 { background-color: hsl(var(--primary)/0.05); }
+  /* Surface backgrounds */
+  .bg-surface-1 { background-color: hsl(var(--surface-1)); }
+  .bg-surface-2 { background-color: hsl(var(--surface-2)); }
+  .bg-surface-3 { background-color: hsl(var(--surface-3)); }
+
+  /* Grain overlay — subtle texture */
+  .grain {
+    position: relative;
+  }
+  .grain::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+  }
+
+  /* Animated gradient border */
+  .border-glow {
+    position: relative;
+  }
+  .border-glow::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg,
+      hsl(var(--primary)/0.4) 0%,
+      transparent 40%,
+      transparent 60%,
+      hsl(var(--primary)/0.2) 100%);
+    pointer-events: none;
+    z-index: -1;
+  }
 }
 
-/* ─── Perf: no global wildcard transitions ────────────── */
-/* transitions are applied per-component only, not globally */
+/* ─── Scroll animations ───────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes pulse-ring {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.animate-float      { animation: float 4s ease-in-out infinite; }
+.animate-float-slow { animation: float 6s ease-in-out infinite; }
+.animate-spin-slow  { animation: spin-slow 12s linear infinite; }
+.animate-shimmer    {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    hsl(var(--primary)/0.12) 50%,
+    transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s ease-in-out infinite;
+}
