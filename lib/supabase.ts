@@ -226,3 +226,168 @@ export async function getVisitorStats() {
    .sort((a, b) => b.count - a.count);
   return { total, unique, byProject, recent7 };
 }
+
+// ── Blog / Construction / Site Updates ───────────────────────────────────────
+// (merged from supabase-blog.ts — delete that file after updating imports)
+
+export interface BlogSection {
+  id?: string;
+  project_id?: string;
+  section_type: "challenge" | "about";
+  sort_order: number;
+  title: string;
+  body: string;
+  icon_name?: string;
+  highlight_phrases?: string; // comma-separated phrases to highlight in gold
+}
+
+export interface ConstructionPhase {
+  id?: string;
+  project_id?: string;
+  sort_order: number;
+  label: string;
+  status: "complete" | "active" | "upcoming";
+  percentage?: number;
+  phase_date?: string;
+}
+
+export interface SiteUpdate {
+  id?: string;
+  project_id?: string;
+  media_type: "image" | "video";
+  media_url: string;
+  caption?: string;
+  update_date?: string;
+  sort_order: number;
+}
+
+export interface ProjectBlogFull {
+  story?: string;
+  current_status?: string;
+  completion_percent?: number;
+  has_live_updates?: boolean;
+  blog_sections: BlogSection[];
+  construction_phases: ConstructionPhase[];
+  site_updates: SiteUpdate[];
+}
+
+/** Fetch full blog data for a single project */
+export async function getProjectBlog(projectId: string): Promise<ProjectBlogFull | null> {
+  const { data: proj, error: projErr } = await supabase
+    .from("projects")
+    .select("story, current_status, completion_percent, has_live_updates")
+    .eq("id", projectId)
+    .single();
+
+  if (projErr) {
+    console.error("getProjectBlog/projects:", projErr);
+    return null;
+  }
+
+  const { data: sections } = await supabase
+    .from("project_blog_sections")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("sort_order");
+
+  const { data: phases } = await supabase
+    .from("project_construction_phases")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("sort_order");
+
+  const { data: updates } = await supabase
+    .from("project_site_updates")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("sort_order");
+
+  return {
+    story: proj.story ?? undefined,
+    current_status: proj.current_status ?? undefined,
+    completion_percent: proj.completion_percent ?? 0,
+    has_live_updates: proj.has_live_updates ?? false,
+    blog_sections: sections ?? [],
+    construction_phases: phases ?? [],
+    site_updates: updates ?? [],
+  };
+}
+
+export async function updateProjectBlogOverview(
+  projectId: string,
+  patch: {
+    story?: string;
+    current_status?: string;
+    completion_percent?: number;
+    has_live_updates?: boolean;
+  }
+) {
+  const { error } = await supabase
+    .from("projects")
+    .update(patch)
+    .eq("id", projectId);
+  return { error };
+}
+
+export async function upsertBlogSection(projectId: string, section: BlogSection) {
+  const payload = { ...section, project_id: projectId };
+  if (section.id) {
+    return supabase.from("project_blog_sections").update(payload).eq("id", section.id);
+  }
+  return supabase.from("project_blog_sections").insert(payload);
+}
+
+export async function deleteBlogSection(id: string) {
+  return supabase.from("project_blog_sections").delete().eq("id", id);
+}
+
+export async function upsertConstructionPhase(projectId: string, phase: ConstructionPhase) {
+  const payload = { ...phase, project_id: projectId };
+  if (phase.id) {
+    return supabase.from("project_construction_phases").update(payload).eq("id", phase.id);
+  }
+  return supabase.from("project_construction_phases").insert(payload);
+}
+
+export async function deleteConstructionPhase(id: string) {
+  return supabase.from("project_construction_phases").delete().eq("id", id);
+}
+
+/** Upload a file to `site-updates` bucket and insert a row */
+export async function addSiteUpdate(
+  projectId: string,
+  file: File,
+  meta: { caption?: string; update_date?: string; sort_order?: number }
+) {
+  const slug = projectId.slice(0, 8);
+  const ext = file.name.split(".").pop();
+  const path = `${slug}-${Date.now()}.${ext}`;
+
+  const { error: uploadErr } = await supabase.storage
+    .from("site-updates")
+    .upload(path, file, { cacheControl: "3600", upsert: false });
+
+  if (uploadErr) return { error: uploadErr };
+
+  const { data: urlData } = supabase.storage.from("site-updates").getPublicUrl(path);
+  const mediaType = file.type.startsWith("video") ? "video" : "image";
+
+  const { error: insertErr } = await supabase.from("project_site_updates").insert({
+    project_id: projectId,
+    media_type: mediaType,
+    media_url: urlData.publicUrl,
+    caption: meta.caption,
+    update_date: meta.update_date,
+    sort_order: meta.sort_order ?? 0,
+  });
+
+  return { error: insertErr, url: urlData.publicUrl };
+}
+
+export async function deleteSiteUpdate(id: string, mediaUrl: string) {
+  const urlParts = mediaUrl.split("/site-updates/");
+  if (urlParts[1]) {
+    await supabase.storage.from("site-updates").remove([urlParts[1]]);
+  }
+  return supabase.from("project_site_updates").delete().eq("id", id);
+}

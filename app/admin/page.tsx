@@ -1,5 +1,6 @@
 "use client";
 
+import AdminBlogTab from "@/components/AdminBlogTab";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,6 +11,7 @@ import {
 import {
   Users, Eye, TrendingUp, Calendar, LogOut, ExternalLink,
   Search, Download, LayoutGrid, Lock, EyeOff, FolderPlus,
+  BookOpen,
   Image as ImageIcon, Link2, MapPin, Tag, Trash2,
   Plus, AlertTriangle, X, RefreshCw, Sparkles, Mail,
   Send, CheckCircle2, Clock, ArrowRight, Copy, Shield,
@@ -27,7 +29,7 @@ interface Stats {
   total: number; unique: number; recent7: number;
   byProject: { project: string; count: number }[];
 }
-type Tab = "overview" | "visitors" | "projects" | "email";
+type Tab = "overview" | "visitors" | "projects" | "blog" | "email";
 
 
 
@@ -186,6 +188,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     { id:"overview", label:"Overview",  icon:<LayoutGrid size={15}/> },
     { id:"visitors", label:"Visitors",  icon:<Users size={15}/> },
     { id:"projects", label:"Projects",  icon:<FolderPlus size={15}/> },
+	{ id:"blog",     label:"Blog & Updates", icon:<BookOpen size={15}/> },
     { id:"email",    label:"Email",     icon:<Mail size={15}/> },
   ];
 
@@ -197,12 +200,13 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   );
 
   const tabTitles: Record<Tab, string> = {
-    overview: "Overview", visitors: "Visitor Log", projects: "Projects", email: "Email Automation",
+    overview: "Overview", visitors: "Visitor Log", projects: "Projects", blog: "Project Blog & Updates", email: "Email Automation",
   };
   const tabSubs: Record<Tab, string> = {
     overview: "Performance at a glance",
     visitors: `${visitors.length} total submissions`,
     projects: "Add, view and delete projects — live, no redeploy needed",
+	blog: "Write construction updates, timelines and project stories",
     email: "Send automated follow-up emails via Resend (free tier — 3,000/month)",
   };
 
@@ -273,6 +277,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         {activeTab==="overview" && <OverviewTab stats={stats} visitors={visitors}/>}
         {activeTab==="visitors" && <VisitorsTab filtered={filtered} search={search} setSearch={setSearch} fmt={fmt}/>}
         {activeTab==="projects" && <ProjectsTab/>}
+		{activeTab==="blog" && <AdminBlogTab/>}
         {activeTab==="email"    && <EmailTab visitors={visitors}/>}
       </main>
     </div>

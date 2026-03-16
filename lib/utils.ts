@@ -5,8 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function haptic(duration: number = 8) {
-  if (typeof window !== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate(duration);
-  }
-}
+// Haptic feedback — use ios-haptics package directly everywhere.
+// Import: import { haptic } from "ios-haptics";
+// haptic()           → light tap
+// haptic.confirm()   → double tap (success)
+// haptic.error()     → triple tap (error)

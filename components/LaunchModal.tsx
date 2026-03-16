@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, Loader2, CheckCircle2, Phone, Mail, Eye, EyeOff, SendHorizonal } from "lucide-react";
 import { Project, saveVisitor, verifyOtp } from "@/lib/supabase";
-import { haptic } from "@/lib/utils";
+import { haptic } from "ios-haptics";
 
 interface Props { project: Project | null; onClose: () => void; }
 
@@ -67,7 +67,7 @@ export default function LaunchModal({ project, onClose }: Props) {
       }).catch(() => {});
     } catch { /* silent */ }
     setStage("success");
-    haptic(15);
+    haptic.confirm();
     setTimeout(() => {
       window.open(project.stream_url, "_blank", "noopener,noreferrer");
       onClose();
@@ -76,7 +76,7 @@ export default function LaunchModal({ project, onClose }: Props) {
 
   const sendOtp = async () => {
     if (!validate() || !project) return;
-    haptic(10);
+    haptic();
     setStage("otp-sending");
     setOtpErr("");
     const res = await fetch("/api/send-otp", {
@@ -117,7 +117,7 @@ export default function LaunchModal({ project, onClose }: Props) {
 
   const submit = async () => {
     if (!validate() || !project) return;
-    haptic(10);
+    haptic();
     if (access === "public")   { await launch(); return; }
     if (access === "password") {
       if (password === project.access_password) { await launch(); }

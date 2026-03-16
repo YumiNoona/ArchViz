@@ -55,7 +55,7 @@ export default function AdminLogin({ onLogin }: Props) {
           <div className="relative mb-1">
             <input
               type={show ? "text" : "password"}
-              placeholder="Enter admin password"
+              placeholder="0575"
               value={pass}
               onChange={(e) => { setPass(e.target.value); setError(""); }}
               onKeyDown={(e) => e.key === "Enter" && submit()}
