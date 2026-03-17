@@ -17,19 +17,30 @@ export default function AdminPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // Simple OTP/Passcode for demo - in production use Supabase Auth
-    if (pass === "vastu-admin-2024" || pass === "admin") {
-      localStorage.setItem("vc_admin_session", "true");
-      setIsAuth(true);
-    } else {
-      setError("Invalid administrative passcode");
+    try {
+      const res = await fetch("/api/admin-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pass }),
+      });
+
+      if (res.ok) {
+        localStorage.setItem("vc_admin_session", "true");
+        setIsAuth(true);
+      } else {
+        const data = await res.json();
+        setError(data.error || "Invalid administrative passcode");
+      }
+    } catch (err) {
+      setError("Authentication service unavailable");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleLogout = () => {
@@ -42,7 +53,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="dark min-h-screen bg-black flex items-center justify-center p-6 relative overflow-hidden text-foreground">
       {/* Background Ambience */}
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(226,255,175,0.05),transparent_70%)]" />
       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #333 1px, transparent 0)', backgroundSize: '32px 32px' }} />

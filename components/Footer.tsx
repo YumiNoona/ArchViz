@@ -1,9 +1,6 @@
 "use client";
 
-import { useSiteConfig } from "./SiteConfigProvider";
-
 export default function Footer() {
-  const { config } = useSiteConfig();
   const year = new Date().getFullYear();
 
   return (
@@ -17,7 +14,7 @@ export default function Footer() {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-medium text-foreground tracking-tight">
-              {config.brand || "VastuChitra"}
+              VastuChitra
             </span>
             <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
               © {year} · ArchViz & Design
@@ -26,7 +23,7 @@ export default function Footer() {
         </div>
 
         <p className="text-xs text-muted-foreground font-light tracking-wide max-w-xs text-center sm:text-left">
-          {config.footerTagline || "Real-time architecture visualization and immersive digital experiences."}
+          Real-time architecture visualization and immersive digital experiences.
         </p>
 
         <div className="flex items-center gap-8">

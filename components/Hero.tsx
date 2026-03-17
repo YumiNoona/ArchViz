@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronRight } from "lucide-react";
-import { useSiteConfig } from "./SiteConfigProvider";
 
 export default function Hero() {
-  const { config } = useSiteConfig();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -30,7 +28,7 @@ export default function Hero() {
           className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary border border-border text-[10px] sm:text-xs font-medium tracking-wide text-muted-foreground mb-8"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-vastu-green animate-pulse" />
-          {config.eyebrow || "Real-time Unreal Engine Experiences"}
+          Real-time Unreal Engine Experiences
           <ChevronRight size={12} className="opacity-50" />
         </motion.div>
 
@@ -41,7 +39,7 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="text-5xl sm:text-6xl md:text-8xl font-medium tracking-tighter leading-[1] mb-6"
         >
-          Explore <span className="text-sweep">Architecture</span> <br className="hidden md:block" /> {config.headline?.[2] || "Before It's Built"}
+          Explore <span className="text-sweep">Architecture</span> <br className="hidden md:block" /> Before It's Built
         </motion.h1>
 
         {/* Subtext */}
@@ -51,7 +49,7 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           className="text-lg md:text-xl text-muted-foreground max-w-2xl font-light leading-relaxed mb-12"
         >
-          {config.sub || "Immersive 3D walkthroughs streamed directly to your browser. Experience photorealistic spaces with zero lag, powered by Unreal Engine Pixel Streaming."}
+          Immersive 3D walkthroughs streamed directly to your browser. Experience photorealistic spaces with zero lag, powered by Unreal Engine Pixel Streaming.
         </motion.p>
 
         {/* CTAs */}
@@ -69,7 +67,7 @@ export default function Hero() {
               document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" });
             }}
           >
-            {config.cta || "View Projects"}
+            View Projects
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </motion.button>
           
@@ -81,7 +79,7 @@ export default function Hero() {
               document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
             }}
           >
-            {config.ctaSecondary || "Contact Sales"}
+            Contact Sales
           </motion.button>
         </motion.div>
       </div>

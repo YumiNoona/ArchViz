@@ -2,36 +2,31 @@
 
 /**
  * ProjectDetail.tsx
- * Full-screen project story page.
- * Rendered by page.tsx when a project is selected — completely replaces the main site view.
- * Props:
- *   project  — the Project object
- *   onBack   — () => void   go back to main site
- *   onLaunch — (p) => void  open LaunchModal
+ * Redesigned full-screen project story page.
+ * Uses the premium Vastu Green aesthetic and consolidated JSONB schema.
  */
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
 import {
   ArrowLeft, Play, ExternalLink, ChevronLeft, ChevronRight,
-  CheckCircle2, Circle, Clock, MapPin, Calendar, Layers, ZoomIn,
+  MapPin, ZoomIn, Info, Activity, ExternalLink as ExtIcon
 } from "lucide-react";
-import { getProjectBlog, Project, ProjectBlogFull, BlogSection } from "@/lib/supabase";
+import { getProjectBlog, type Project, type BlogSection, type SiteUpdate } from "@/lib/supabase";
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
+// ─── Theme Constants ──────────────────────────────────────────────────────────
 
-const GOLD = "#c4a478";
-const GOLD_DIM = "rgba(196,164,120,0.55)";
-const GOLD_FAINT = "rgba(196,164,120,0.15)";
-const BG = "#080604";
-const FG = "rgba(245,235,215,0.95)";
-const MUTED = "rgba(196,164,120,0.4)";
+const VASTU_GREEN = "#e2ffaf";
+const VASTU_GREEN_DIM = "rgba(226, 255, 175, 0.6)";
+const VASTU_GREEN_FAINT = "rgba(226, 255, 175, 0.1)";
+const BG = "#000000";
+const FG = "#ffffff";
+const MUTED = "rgba(255, 255, 255, 0.5)";
 
-/** Wrap occurrences of highlight phrases in gold spans */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function HighlightedText({ text, phrases }: { text: string; phrases: string[] }) {
   if (!phrases.length) return <>{text}</>;
-
-  // Build regex that matches any phrase (case-insensitive)
   const escaped = phrases.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).filter(Boolean);
   if (!escaped.length) return <>{text}</>;
   const regex = new RegExp(`(${escaped.join("|")})`, "gi");
@@ -41,242 +36,197 @@ function HighlightedText({ text, phrases }: { text: string; phrases: string[] })
     <>
       {parts.map((part, i) => {
         const isHighlight = escaped.some(e => new RegExp(`^${e}$`, "i").test(part));
-        if (isHighlight) {
-          return (
-            <motion.span
-              key={i}
-              initial={{ color: MUTED }}
-              whileInView={{ color: GOLD }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.6, delay: i * 0.04 }}
-              style={{ fontStyle: "italic", fontFamily: "var(--font-display)" }}
-            >
-              {part}
-            </motion.span>
-          );
-        }
-        return <span key={i}>{part}</span>;
+        return isHighlight ? (
+          <motion.span
+            key={i}
+            initial={{ color: MUTED }}
+            whileInView={{ color: VASTU_GREEN }}
+            viewport={{ once: true, margin: "-10% 0%" }}
+            className="italic font-medium"
+          >
+            {part}
+          </motion.span>
+        ) : (
+          <span key={i}>{part}</span>
+        );
       })}
     </>
   );
 }
 
-/** Animated paragraph that reveals word by word */
 function AnimatedParagraph({ text, phrases, delay = 0 }: { text: string; phrases: string[]; delay?: number }) {
   const ref = useRef<HTMLParagraphElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const inView = useInView(ref, { once: true, margin: "-10% 0%" });
 
   return (
     <motion.p
       ref={ref}
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
-      className="text-base leading-[1.95] font-light"
-      style={{ color: MUTED }}
+      className="text-base leading-relaxed font-light text-muted-foreground"
     >
       <HighlightedText text={text} phrases={phrases} />
     </motion.p>
   );
 }
 
-/** Section label */
-function Label({ children }: { children: React.ReactNode }) {
+function Label({ children, icon: Icon }: { children: React.ReactNode; icon?: any }) {
   return (
-    <div className="flex items-center gap-3 mb-5">
-      <div className="w-5 h-px" style={{ background: GOLD }} />
-      <span className="text-[11px] uppercase tracking-[0.28em]" style={{ color: GOLD_DIM, fontFamily: "var(--font-mono)" }}>
+    <div className="flex items-center gap-2 mb-4">
+      {Icon && <Icon size={12} className="text-vastu-green" />}
+      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-vastu-green/60">
         {children}
       </span>
     </div>
   );
 }
 
-// ─── Phase timeline ───────────────────────────────────────────────────────────
+// ─── Gallery ──────────────────────────────────────────────────────────────────
 
-function Timeline({ phases }: { phases: ProjectBlogFull["construction_phases"] }) {
-  if (!phases.length) return null;
-  return (
-    <div className="relative">
-      {/* vertical line */}
-      <div className="absolute left-[7px] top-2 bottom-2 w-px" style={{ background: GOLD_FAINT }} />
-      <div className="space-y-6 pl-6">
-        {phases.map((p, i) => {
-          const isComplete = p.status === "complete";
-          const isActive = p.status === "active";
-          return (
-            <motion.div
-              key={p.id || i}
-              initial={{ opacity: 0, x: -16 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-30px" }}
-              transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-              className="relative"
-            >
-              {/* dot */}
-              <div
-                className="absolute -left-6 top-0.5 w-3.5 h-3.5 rounded-full flex items-center justify-center"
-                style={{
-                  background: isComplete ? GOLD : isActive ? "rgba(196,164,120,0.2)" : "rgba(196,164,120,0.05)",
-                  border: `1px solid ${isComplete ? GOLD : isActive ? GOLD_DIM : GOLD_FAINT}`,
-                  boxShadow: isActive ? `0 0 10px rgba(196,164,120,0.4)` : "none",
-                }}
-              >
-                {isComplete && <CheckCircle2 size={8} style={{ color: BG }} />}
-                {isActive && <motion.div className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD }} animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 1.6, repeat: Infinity }} />}
-              </div>
-
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p
-                    className="text-sm font-light"
-                    style={{ color: isComplete ? "rgba(196,164,120,0.8)" : isActive ? FG : "rgba(196,164,120,0.35)" }}
-                  >
-                    {p.label}
-                  </p>
-                  {isActive && p.percentage != null && p.percentage > 0 && (
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <div className="w-24 h-0.5 rounded-full overflow-hidden" style={{ background: "rgba(196,164,120,0.1)" }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${p.percentage}%` }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 1.2, ease: "easeOut" }}
-                          className="h-full rounded-full"
-                          style={{ background: `linear-gradient(90deg, ${GOLD_DIM}, ${GOLD})` }}
-                        />
-                      </div>
-                      <span className="text-[10px]" style={{ color: GOLD, fontFamily: "var(--font-mono)" }}>{p.percentage}%</span>
-                    </div>
-                  )}
-                </div>
-                {p.phase_date && (
-                  <span className="text-[10px] flex-shrink-0 mt-0.5" style={{ color: "rgba(196,164,120,0.3)", fontFamily: "var(--font-mono)" }}>
-                    {p.phase_date}
-                  </span>
-                )}
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── Gallery lightbox ─────────────────────────────────────────────────────────
-
-function Gallery({ media }: { media: ProjectBlogFull["site_updates"] }) {
-  const images = media.filter(m => m.media_type === "image");
+function Gallery({ media }: { media: SiteUpdate[] }) {
   const [active, setActive] = useState(0);
   const [lightbox, setLightbox] = useState(false);
 
-  if (!images.length) return null;
+  if (!media || media.length === 0) return null;
+
+  const renderMedia = (item: SiteUpdate, isSub = false) => {
+    if (!item) return null;
+    if (item.media_type === "youtube") {
+      let embedUrl = item.media_url;
+      // Convert standard youtube watch?v= links to embed links if needed
+      if (embedUrl.includes("watch?v=")) {
+        embedUrl = embedUrl.replace("watch?v=", "embed/");
+      } else if (embedUrl.includes("youtu.be/")) {
+        embedUrl = embedUrl.replace("youtu.be/", "youtube.com/embed/");
+      }
+      // Remove any extra query params and add autoplay=0 to ensure it doesn't auto-start
+      embedUrl = embedUrl.split("&")[0];
+      
+      return (
+        <iframe
+          src={embedUrl}
+          title="YouTube video player" // Adding standard title for accessibility
+          className={`w-full h-full object-cover ${!isSub ? "cursor-auto" : ""}`}
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      );
+    }
+    
+    if (item.media_type === "video") {
+      return (
+        <video 
+          src={item.media_url}
+          className={`w-full h-full object-cover ${!isSub ? "cursor-auto" : ""}`}
+          controls={!isSub}
+          autoPlay={false}
+          muted={isSub} // mute in thumbnails
+          loop={isSub}
+        />
+      );
+    }
+
+    // Default image
+    return (
+      <img
+        src={item.media_url}
+        className={`w-full h-full object-cover ${!isSub ? "cursor-zoom-in" : ""}`}
+        onClick={() => !isSub && setLightbox(true)}
+        alt=""
+      />
+    );
+  };
 
   return (
-    <div>
-      {/* Main image */}
-      <div className="relative rounded-2xl overflow-hidden mb-3" style={{ aspectRatio: "16/9" }}>
+    <div className="space-y-4">
+      <div className="relative aspect-video rounded-[2rem] overflow-hidden border border-white/5 bg-zinc-900/20 group">
         <AnimatePresence mode="wait">
-          <motion.img
+          <motion.div
             key={active}
-            src={images[active]?.media_url}
-            alt={images[active]?.caption ?? ""}
-            className="absolute inset-0 w-full h-full object-cover cursor-zoom-in"
-            initial={{ opacity: 0, scale: 1.03 }}
+            className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/50"
+            initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.45 }}
-            onClick={() => setLightbox(true)}
-          />
+            transition={{ duration: 0.6 }}
+          >
+            {renderMedia(media[active])}
+          </motion.div>
         </AnimatePresence>
-
-        {/* Nav arrows */}
-        {images.length > 1 && (
-          <>
-            <button
-              onClick={() => setActive(i => (i - 1 + images.length) % images.length)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-100 opacity-70"
-              style={{ background: "rgba(8,6,4,0.75)", border: `1px solid ${GOLD_FAINT}` }}
-            >
-              <ChevronLeft size={14} style={{ color: GOLD }} />
+        
+        {media.length > 1 && (
+          <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={() => setActive(i => (i - 1 + media.length) % media.length)} className="p-3 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white hover:bg-vastu-green hover:text-black transition-all">
+              <ChevronLeft size={16} />
             </button>
-            <button
-              onClick={() => setActive(i => (i + 1) % images.length)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-100 opacity-70"
-              style={{ background: "rgba(8,6,4,0.75)", border: `1px solid ${GOLD_FAINT}` }}
-            >
-              <ChevronRight size={14} style={{ color: GOLD }} />
+            <button onClick={() => setActive(i => (i + 1) % media.length)} className="p-3 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white hover:bg-vastu-green hover:text-black transition-all">
+              <ChevronRight size={16} />
             </button>
-          </>
+          </div>
         )}
 
-        {/* Zoom hint */}
-        <div className="absolute bottom-3 right-3 opacity-50 hover:opacity-100 transition-opacity pointer-events-none">
-          <ZoomIn size={14} style={{ color: GOLD }} />
-        </div>
-
-        {/* Caption */}
-        {images[active]?.caption && (
-          <div className="absolute bottom-0 left-0 right-0 px-5 py-3" style={{ background: "linear-gradient(transparent, rgba(8,6,4,0.85))" }}>
-            <p className="text-xs" style={{ color: "rgba(196,164,120,0.65)" }}>{images[active].caption}</p>
-            {images[active].update_date && (
-              <p className="text-[10px] mt-0.5" style={{ color: "rgba(196,164,120,0.35)", fontFamily: "var(--font-mono)" }}>{images[active].update_date}</p>
-            )}
+        {media[active]?.media_type === 'image' && (
+          <div className="absolute bottom-6 right-6 p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 opacity-60 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <ZoomIn size={16} className="text-vastu-green" />
           </div>
         )}
       </div>
 
-      {/* Thumbnails */}
-      {images.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {images.map((m, i) => (
+      {media.length > 1 && (
+        <div className="flex gap-3 overflow-x-auto no-scrollbar py-2">
+          {media.map((m, i) => (
             <button
               key={i}
               onClick={() => setActive(i)}
-              className="flex-shrink-0 w-16 h-11 rounded-lg overflow-hidden transition-all duration-200"
-              style={{
-                border: `1px solid ${i === active ? GOLD : "rgba(196,164,120,0.1)"}`,
-                opacity: i === active ? 1 : 0.45,
-              }}
+              className={`relative flex-shrink-0 w-24 h-14 rounded-xl overflow-hidden border-2 transition-all ${
+                i === active ? "border-vastu-green scale-105" : "border-transparent opacity-40 hover:opacity-100"
+              }`}
             >
-              <img src={m.media_url} alt="" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 pointer-events-none">
+                {m.thumbnail_url ? (
+                  <img src={m.thumbnail_url} className="w-full h-full object-cover" alt="Video Thumbnail" />
+                ) : (
+                  renderMedia(m, true)
+                )}
+              </div>
+              {m.media_type !== "image" && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white pointer-events-none">
+                  <Play size={12} className="fill-white" />
+                </div>
+              )}
             </button>
           ))}
         </div>
       )}
 
-      {/* Lightbox */}
       <AnimatePresence>
         {lightbox && (
           <motion.div
-            className="fixed inset-0 z-[100] flex items-center justify-center"
-            style={{ background: "rgba(8,6,4,0.95)", backdropFilter: "blur(16px)" }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-4 md:p-12"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setLightbox(false)}
           >
-            <motion.img
-              src={images[active]?.media_url}
-              alt=""
-              className="max-w-[90vw] max-h-[85vh] rounded-2xl object-contain"
-              initial={{ scale: 0.92 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.92 }}
-              transition={{ duration: 0.35 }}
-            />
-            {images.length > 1 && (
-              <>
-                <button onClick={e => { e.stopPropagation(); setActive(i => (i - 1 + images.length) % images.length); }} className="absolute left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center" style={{ background: "rgba(196,164,120,0.1)", border: `1px solid ${GOLD_FAINT}` }}>
-                  <ChevronLeft style={{ color: GOLD }} />
-                </button>
-                <button onClick={e => { e.stopPropagation(); setActive(i => (i + 1) % images.length); }} className="absolute right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center" style={{ background: "rgba(196,164,120,0.1)", border: `1px solid ${GOLD_FAINT}` }}>
-                  <ChevronRight style={{ color: GOLD }} />
-                </button>
-              </>
+            {media[active]?.media_type === "image" ? (
+              <motion.img
+                src={media[active]?.media_url}
+                className="max-w-full max-h-[90vh] rounded-3xl object-contain shadow-2xl"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+              />
+            ) : (
+              <motion.div 
+               className="w-full max-w-5xl aspect-video rounded-3xl overflow-hidden shadow-2xl bg-black"
+               initial={{ scale: 0.9, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               exit={{ scale: 0.9, opacity: 0 }}>
+                  {renderMedia(media[active])}
+              </motion.div>
             )}
-            <button onClick={() => setLightbox(false)} className="absolute top-5 right-5 text-xs uppercase tracking-widest" style={{ color: GOLD_DIM, fontFamily: "var(--font-mono)" }}>ESC</button>
+            <button className="absolute top-8 right-8 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-vastu-green transition-colors">Close (Esc)</button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -284,36 +234,7 @@ function Gallery({ media }: { media: ProjectBlogFull["site_updates"] }) {
   );
 }
 
-// ─── Blog section card ────────────────────────────────────────────────────────
-
-function StorySection({ section, index }: { section: BlogSection; index: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
-  const phrases = (section.highlight_phrases ?? "")
-    .split(",")
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 28 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.75, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
-      className="space-y-4"
-    >
-      <h3
-        className="text-2xl font-light"
-        style={{ fontFamily: "var(--font-display)", color: FG, letterSpacing: "-0.01em" }}
-      >
-        {section.title}
-      </h3>
-      <AnimatedParagraph text={section.body} phrases={phrases} delay={0.1} />
-    </motion.div>
-  );
-}
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProjectDetail({
   project,
@@ -324,30 +245,25 @@ export default function ProjectDetail({
   onBack: () => void;
   onLaunch: (p: Project) => void;
 }) {
-  const [blog, setBlog] = useState<ProjectBlogFull | null>(null);
+  const [data, setData] = useState<Project | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [heroTheme, setHeroTheme] = useState<"main" | "dark" | "light">("main");
 
-  // Hero parallax
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
-  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
+  const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "40%"]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
-    getProjectBlog(project.id).then(setBlog).catch(() => {});
+    window.scrollTo(0, 0);
+    getProjectBlog(project.id).then(setData);
   }, [project.id]);
 
-  const storyPhrases = (blog as any)?.highlight_phrases ?? [];
-  const allSections = blog?.blog_sections ?? [];
-  const images = blog?.site_updates?.filter(u => u.media_type === "image") ?? [];
-  const phases = blog?.construction_phases ?? [];
+  const p = data || project; // Fallback to provided project while loading detailed data
 
   const specs = [
-    { label: "Type", value: project.type },
-    { label: "Location", value: project.location },
-    { label: "Year", value: project.year },
-    ...(blog?.current_status ? [{ label: "Status", value: blog.current_status }] : []),
-    ...(blog?.completion_percent ? [{ label: "Progress", value: `${blog.completion_percent}%` }] : []),
+    { label: "Type", value: p.type },
+    { label: "Location", value: p.location },
+    { label: "Year", value: p.year },
   ];
 
   return (
@@ -356,283 +272,201 @@ export default function ProjectDetail({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      style={{ background: BG, minHeight: "100vh" }}
+      className="bg-black min-h-screen selection:bg-vastu-green selection:text-black"
     >
-      {/* ── Sticky top bar ── */}
-      <div
-        className="fixed top-0 left-0 right-0 z-50 px-6 lg:px-16 py-4"
-        style={{ background: "rgba(8,6,4,0.88)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(196,164,120,0.07)" }}
-      >
+      {/* ── Navbar ── */}
+      <nav className="fixed top-0 inset-x-0 z-50 py-4 px-6 md:px-12 bg-black/20 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <motion.button
-            onClick={onBack}
-            className="group flex items-center gap-2 text-sm"
-            style={{ color: GOLD_DIM }}
-            whileHover={{ x: -2 }}
-            onMouseEnter={e => e.currentTarget.style.color = GOLD}
-            onMouseLeave={e => e.currentTarget.style.color = GOLD_DIM}
-          >
-            <ArrowLeft size={14} />
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              Back to Projects
-            </span>
-          </motion.button>
-
-          <div className="flex items-center gap-4">
-            {blog?.has_live_updates && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.2)" }}>
-                <motion.div className="w-1.5 h-1.5 rounded-full bg-emerald-400" animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1.4, repeat: Infinity }} />
-                <span className="text-[10px] text-emerald-300" style={{ fontFamily: "var(--font-mono)" }}>Live Updates</span>
+          <button onClick={onBack} className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-vastu-green transition-colors">
+            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+            Back to Projects
+          </button>
+          
+          <div className="flex items-center gap-6">
+            {p.has_live_updates && p.gallery_updates?.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-vastu-green/10 border border-vastu-green/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-vastu-green animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-vastu-green">Gallery</span>
               </div>
             )}
-            <span className="text-[10px] uppercase tracking-widest" style={{ color: "rgba(196,164,120,0.3)", fontFamily: "var(--font-mono)" }}>
-              {project.type} · {project.year}
+            <span className="hidden md:inline text-[10px] font-bold uppercase tracking-widest text-white/20">
+              {p.type} — {p.year}
             </span>
           </div>
         </div>
-      </div>
+      </nav>
 
-      {/* ── Hero ── */}
-      <div className="relative h-[100vh] overflow-hidden flex items-end">
-        <motion.img
-          src={project.image_url}
-          alt={project.title}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ y: heroY }}
-          initial={{ scale: 1.08 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.6, ease: [0.16, 1, 0.3, 1] }}
-        />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(8,6,4,0.25) 0%, rgba(8,6,4,0.1) 40%, rgba(8,6,4,0.7) 70%, #080604 100%)" }} />
+      {/* ── Hero Section ── */}
+      <header className="relative h-screen flex items-end justify-start overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.img 
+            key={heroTheme}
+            src={heroTheme === "dark" && p.image_url_dark ? p.image_url_dark : heroTheme === "light" && p.image_url_light ? p.image_url_light : p.image_url} 
+            style={{ y: heroY }}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1.1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: "anticipate" }}
+            className="absolute inset-0 w-full h-full object-cover" 
+          />
+        </AnimatePresence>
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-black/10" />
 
-        <motion.div
+        <motion.div 
           style={{ opacity: heroOpacity }}
-          className="relative z-10 w-full px-8 lg:px-20 pb-20 max-w-7xl mx-auto"
+          className="relative z-10 w-full max-w-7xl mx-auto px-8 md:px-12 pb-24"
         >
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-6"
           >
-            <div className="flex items-center gap-3 mb-5">
-              <MapPin size={11} style={{ color: GOLD }} />
-              <span className="text-xs uppercase tracking-[0.28em]" style={{ color: GOLD_DIM, fontFamily: "var(--font-mono)" }}>
-                {project.location}
-              </span>
+            <div className="flex items-center gap-3 text-vastu-green">
+              <MapPin size={14} />
+              <span className="text-xs font-bold uppercase tracking-[0.3em]">{p.location}</span>
             </div>
-            <h1
-              className="font-light mb-5"
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "clamp(3.5rem, 8vw, 7rem)",
-                color: FG,
-                letterSpacing: "-0.025em",
-                lineHeight: 0.9,
-              }}
-            >
-              {project.title}
+            <h1 className="text-7xl md:text-9xl font-medium tracking-tighter leading-[0.85] text-white">
+              {p.title.split(' ').map((word, i) => (
+                <span key={i} className="block">{word}</span>
+              ))}
             </h1>
-            <p className="text-lg font-light max-w-xl" style={{ color: MUTED }}>
-              {project.description}
+            <p className="max-w-xl text-lg text-white/60 font-light leading-relaxed">
+              {p.description}
             </p>
           </motion.div>
         </motion.div>
 
-        {/* Scroll cue */}
-        <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4 }}
-        >
-          <motion.div className="w-px h-10" style={{ background: `linear-gradient(to bottom, transparent, ${GOLD_DIM})` }} animate={{ scaleY: [0, 1, 0] }} transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }} />
-        </motion.div>
-      </div>
-
-      {/* ── Content ── */}
-      <div className="max-w-7xl mx-auto px-8 lg:px-20 py-24">
-        <div className="grid lg:grid-cols-[1fr_320px] gap-16 lg:gap-24">
-
-          {/* Left — story */}
-          <div className="space-y-20">
-
-            {/* Main story */}
-            {(blog?.story || project.long_description) && (
-              <section>
-                <Label>The Story</Label>
-                <AnimatedParagraph
-                  text={blog?.story || project.long_description || ""}
-                  phrases={[]}
-                />
-              </section>
-            )}
-
-            {/* Blog sections */}
-            {allSections.length > 0 && (
-              <section className="space-y-14">
-                <Label>Project Narrative</Label>
-                {allSections.map((s, i) => (
-                  <StorySection key={s.id || i} section={s} index={i} />
-                ))}
-              </section>
-            )}
-
-            {/* Gallery */}
-            {images.length > 0 && (
-              <section>
-                <Label>Site Gallery</Label>
-                <Gallery media={blog?.site_updates ?? []} />
-              </section>
-            )}
-          </div>
-
-          {/* Right — sidebar (sticky) */}
-          <div className="space-y-8 lg:sticky lg:top-24 lg:self-start">
-
-            {/* Specs */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-              className="p-6 rounded-2xl"
-              style={{ background: "rgba(196,164,120,0.03)", border: "1px solid rgba(196,164,120,0.09)" }}
-            >
-              <Label>Project Details</Label>
-              <div className="space-y-0">
-                {specs.map(({ label, value }) => (
-                  <div key={label} className="flex justify-between py-3" style={{ borderBottom: "1px solid rgba(196,164,120,0.06)" }}>
-                    <span className="text-[10px] uppercase tracking-wider" style={{ color: "rgba(196,164,120,0.35)", fontFamily: "var(--font-mono)" }}>{label}</span>
-                    <span className="text-sm" style={{ color: "rgba(196,164,120,0.75)" }}>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Completion ring */}
-            {blog?.completion_percent != null && blog.completion_percent > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: 0.1 }}
-                className="p-6 rounded-2xl flex flex-col items-center"
-                style={{ background: "rgba(196,164,120,0.03)", border: "1px solid rgba(196,164,120,0.09)" }}
-              >
-                <CompletionRing percent={blog.completion_percent} />
-                <p className="text-xs mt-3 uppercase tracking-widest" style={{ color: GOLD_DIM, fontFamily: "var(--font-mono)" }}>
-                  Overall Completion
-                </p>
-              </motion.div>
-            )}
-
-            {/* Timeline */}
-            {phases.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: 0.15 }}
-                className="p-6 rounded-2xl"
-                style={{ background: "rgba(196,164,120,0.03)", border: "1px solid rgba(196,164,120,0.09)" }}
-              >
-                <Label>Construction Timeline</Label>
-                <Timeline phases={phases} />
-              </motion.div>
-            )}
-
-            {/* Launch button */}
-            {project.stream_url && (
-              <motion.button
-                onClick={() => onLaunch(project)}
-                whileHover={{ scale: 1.03, y: -2 }}
-                whileTap={{ scale: 0.97 }}
-                className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-medium text-sm"
-                style={{ background: GOLD, color: BG, boxShadow: "0 0 40px rgba(196,164,120,0.25)" }}
-              >
-                <Play size={15} fill={BG} strokeWidth={0} />
-                Launch Immersive Tour
-                <ExternalLink size={13} />
-              </motion.button>
-            )}
-          </div>
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-30">
+          <div className="w-px h-12 bg-gradient-to-b from-transparent via-white to-transparent animate-draw-line" />
         </div>
 
-        {/* ── Full-width CTA ── */}
-        {project.stream_url && (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9 }}
-            className="mt-32 rounded-3xl flex flex-col items-center text-center py-24 px-8 relative overflow-hidden"
-            style={{ background: "linear-gradient(135deg, rgba(196,164,120,0.06) 0%, rgba(196,164,120,0.02) 100%)", border: "1px solid rgba(196,164,120,0.1)" }}
-          >
-            {/* Glow */}
-            <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 60% 40% at 50% 100%, rgba(196,164,120,0.08), transparent)" }} />
-
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-8" style={{ background: "rgba(196,164,120,0.08)", border: "1px solid rgba(196,164,120,0.2)" }}>
-              <Play size={24} style={{ color: GOLD }} fill={GOLD} />
-            </div>
-            <h2
-              className="font-light mb-5"
-              style={{ fontFamily: "var(--font-display)", fontSize: "clamp(2.2rem, 4.5vw, 4rem)", color: FG, letterSpacing: "-0.025em" }}
-            >
-              Step Inside the{" "}
-              <span style={{ color: GOLD, fontStyle: "italic" }}>Experience</span>
-            </h2>
-            <p className="mb-10 max-w-md text-base leading-relaxed font-light" style={{ color: MUTED }}>
-              Walk every room before a single brick is laid. Photorealistic real-time environments streamed to any browser — powered by Unreal Engine 5.
-            </p>
-            <motion.button
-              onClick={() => onLaunch(project)}
-              whileHover={{ scale: 1.05, y: -3 }}
-              whileTap={{ scale: 0.97 }}
-              className="inline-flex items-center gap-3 px-10 py-5 rounded-full font-medium text-base"
-              style={{ background: GOLD, color: BG, boxShadow: "0 0 80px rgba(196,164,120,0.35)" }}
-            >
-              <Play size={18} fill={BG} strokeWidth={0} />
-              Launch Immersive Tour
-              <ExternalLink size={15} />
-            </motion.button>
-          </motion.div>
+        {/* Theme Toggle */}
+        {(p.image_url_dark || p.image_url_light) && (
+          <div className="absolute bottom-10 right-8 md:right-12 z-20 flex gap-2 p-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
+            <button onClick={() => setHeroTheme("main")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${heroTheme === "main" ? "bg-white text-black" : "text-white/40 hover:text-white"}`}>Default</button>
+            {p.image_url_light && <button onClick={() => setHeroTheme("light")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${heroTheme === "light" ? "bg-white text-black" : "text-white/40 hover:text-white"}`}>Light Mode</button>}
+            {p.image_url_dark && <button onClick={() => setHeroTheme("dark")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${heroTheme === "dark" ? "bg-white text-black" : "text-white/40 hover:text-white"}`}>Dark Mode</button>}
+          </div>
         )}
-      </div>
+      </header>
+
+      {/* ── Main Layout ── */}
+      <main className="max-w-7xl mx-auto px-8 md:px-12 py-32">
+        <div className="grid lg:grid-cols-[1fr_380px] gap-24 lg:gap-32">
+          
+          {/* Content Left */}
+          <div className="space-y-32">
+            
+            {/* Story Overview */}
+            {p.long_description && (
+              <section className="space-y-8">
+                <Label icon={Info}>The Concept</Label>
+                <div className="prose prose-invert max-w-none">
+                  <AnimatedParagraph text={p.long_description} phrases={[]} />
+                </div>
+              </section>
+            )}
+
+            {/* Sub Sections */}
+            {(p.narrative_sections || []).length > 0 && (
+              <div className="space-y-32">
+                {p.narrative_sections.map((s, i) => (
+                  <section key={i} className="space-y-8">
+                    <Label icon={Activity}>{s.title}</Label>
+                    <AnimatedParagraph 
+                      text={s.body} 
+                      phrases={(s.highlight_phrases || "").split(',').map(x => x.trim())} 
+                    />
+                  </section>
+                ))}
+              </div>
+            )}
+
+            {/* Gallery Section */}
+            {(p.gallery_updates || []).length > 0 && (
+              <section className="space-y-12">
+                <Label icon={ZoomIn}>Site Immersive Gallery</Label>
+                <Gallery media={p.gallery_updates} />
+              </section>
+            )}
+
+          </div>
+
+          {/* Sidebar Right */}
+          <aside className="space-y-12">
+            
+            {/* Project Info Card */}
+            <div className="p-10 rounded-[2.5rem] bg-zinc-900/40 border border-white/5 backdrop-blur-md space-y-10 lg:sticky lg:top-32">
+              <div className="space-y-6">
+                 <Label>{p.title}</Label>
+                 <div className="grid gap-6">
+                    {specs.map(spec => (
+                      <div key={spec.label} className="group border-b border-white/5 pb-4 last:border-0">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/20 group-hover:text-vastu-green transition-colors">{spec.label}</p>
+                        <p className="text-sm text-white/80 font-light mt-1">{spec.value}</p>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+
+              {/* Launcher */}
+              {p.stream_url && (
+                <button
+                  onClick={() => onLaunch(p)}
+                  className="w-full h-16 rounded-2xl bg-white text-black font-bold uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-vastu-green hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-vastu-green/20"
+                >
+                  <Play size={14} fill="currentColor" />
+                  Launch Experience
+                  <ExternalLink size={12} className="opacity-40" />
+                </button>
+              )}
+            </div>
+
+          </aside>
+        </div>
+
+        {/* ── Bottom Immersive CTA ── */}
+        {p.stream_url && (
+          <section className="mt-64 relative rounded-[3.5rem] overflow-hidden bg-zinc-900">
+             <div className="absolute inset-0">
+                <img src={p.image_url} className="w-full h-full object-cover opacity-20" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+             </div>
+             
+             <div className="relative z-10 py-32 px-8 text-center flex flex-col items-center">
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  className="w-24 h-24 rounded-full bg-vastu-green/10 border border-vastu-green/30 flex items-center justify-center mb-10"
+                >
+                  <Play size={32} className="text-vastu-green ml-2" fill="currentColor" />
+                </motion.div>
+                
+                <h2 className="text-4xl md:text-7xl font-medium tracking-tighter text-white max-w-4xl mb-8">
+                  Step Inside the <span className="italic text-vastu-green">Architecture</span>
+                </h2>
+                
+                <p className="text-lg text-white/40 font-light max-w-2xl mb-12">
+                  Experience every detail through photorealistic pixel streaming. No downloads required. Pure architecture, directly in your browser.
+                </p>
+                
+                <button
+                  onClick={() => onLaunch(p)}
+                  className="px-12 py-6 rounded-full bg-vastu-green text-black font-bold uppercase text-xs tracking-[0.2em] hover:scale-110 active:scale-95 transition-all shadow-2xl shadow-vastu-green/40"
+                >
+                  Start The Tour
+                </button>
+             </div>
+          </section>
+        )}
+      </main>
+
+      <footer className="py-24 border-t border-white/5 text-center px-8">
+        <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/10">VastuChitra ArchViz — {new Date().getFullYear()}</p>
+      </footer>
     </motion.div>
-  );
-}
-
-// ─── Completion ring (SVG) ────────────────────────────────────────────────────
-
-function CompletionRing({ percent }: { percent: number }) {
-  const r = 44;
-  const circ = 2 * Math.PI * r;
-  const ref = useRef<SVGCircleElement>(null);
-  const inView = useInView(ref as any, { once: true });
-
-  return (
-    <div className="relative w-28 h-28 flex items-center justify-center">
-      <svg width="112" height="112" viewBox="0 0 112 112" style={{ transform: "rotate(-90deg)" }}>
-        <circle cx="56" cy="56" r={r} fill="none" strokeWidth="2" stroke="rgba(196,164,120,0.08)" />
-        <motion.circle
-          ref={ref}
-          cx="56" cy="56" r={r}
-          fill="none"
-          strokeWidth="2"
-          stroke={GOLD}
-          strokeLinecap="round"
-          strokeDasharray={circ}
-          initial={{ strokeDashoffset: circ }}
-          animate={inView ? { strokeDashoffset: circ - (circ * percent) / 100 } : {}}
-          transition={{ duration: 1.8, ease: "easeOut" }}
-          style={{ filter: "drop-shadow(0 0 4px rgba(196,164,120,0.5))" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-light" style={{ color: GOLD, fontFamily: "var(--font-display)" }}>{percent}</span>
-        <span className="text-[10px]" style={{ color: GOLD_DIM, fontFamily: "var(--font-mono)" }}>%</span>
-      </div>
-    </div>
   );
 }

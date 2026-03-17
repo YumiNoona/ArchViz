@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Mail, Eye, EyeOff, ArrowRight, RefreshCw, CheckCircle2, X, Sun, Moon } from "lucide-react";
-import { getProjectByToken, verifyOtp, Project, ProjectLink } from "@/lib/supabase";
+import { getProjectByToken, verifyOtp, Project, ProjectAuth } from "@/lib/supabase";
 import { useTheme } from "next-themes";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -16,35 +16,24 @@ function useToken() {
 export default function PrivateLinkPage() {
   const token = useToken();
   const [project, setProject] = useState<Project | null>(null);
-  const [link,    setLink]    = useState<ProjectLink | null>(null);
-  const [status,  setStatus]  = useState<"loading"|"not-found"|"gate"|"granted">("loading");
-  const [gate,    setGate]    = useState<"password"|"otp">("password");
+  const [auth,    setAuth]    = useState<ProjectAuth | null>(null);
+  const [status,  setStatus]  = useState<"loading"|"not-found"|"granted">("loading");
 
   useEffect(() => {
     if (!token) { setStatus("not-found"); return; }
     (async () => {
-      const { project: p, link: l } = await getProjectByToken(token);
-      if (!p || !l) { setStatus("not-found"); return; }
+      const { project: p, auth: a } = await getProjectByToken(token);
+      if (!p || !a) { setStatus("not-found"); return; }
       setProject(p);
-      setLink(l);
-      if (p.access_type === "public")   { setStatus("granted"); return; }
-      if (p.access_type === "password") { setGate("password"); setStatus("gate"); return; }
-      if (p.access_type === "otp")      { setGate("otp");      setStatus("gate"); return; }
+      setAuth(a);
       setStatus("granted");
     })();
   }, [token]);
 
   if (status === "loading") return <Loader />;
   if (status === "not-found") return <NotFound />;
-  if (status === "gate") return (
-    <GatePage
-      project={project!}
-      link={link!}
-      mode={gate}
-      onGranted={() => setStatus("granted")}
-    />
-  );
-  return <ProjectView project={project!} link={link!} />;
+  
+  return <ProjectView project={project!} auth={auth!} />;
 }
 
 // ── Loader ────────────────────────────────────────────────────────────────────
@@ -60,246 +49,14 @@ function Loader() {
 // ── Not Found ─────────────────────────────────────────────────────────────────
 function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "hsl(240 15% 6%)" }}>
-      <X size={32} className="mb-4" style={{ color: "hsl(0 60% 55%)" }} />
-      <h1 className="text-xl font-light mb-2" style={{ color: "hsl(40 18% 88%)", fontFamily: "Georgia, serif" }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#000" }}>
+      <X size={32} className="mb-4 text-red-500" />
+      <h1 className="text-xl font-light mb-2 text-white">
         Link not found or expired
       </h1>
-      <p className="text-sm text-center" style={{ color: "hsl(240 6% 50%)" }}>
+      <p className="text-sm text-center text-white/40">
         This link may have expired or been revoked. Please contact your architect.
       </p>
-    </div>
-  );
-}
-
-// ── Gate Page ─────────────────────────────────────────────────────────────────
-function GatePage({ project, link, mode, onGranted }: {
-  project: Project; link: ProjectLink; mode: "password"|"otp"; onGranted: () => void;
-}) {
-  const [pw,       setPw]       = useState("");
-  const [showPw,   setShowPw]   = useState(false);
-  const [email,    setEmail]    = useState(link.client_email || "");
-  const [phone,    setPhone]    = useState("");
-  const [usePhone, setUsePhone] = useState(true); // prefer SMS
-  const [otpCode,  setOtpCode]  = useState("");
-  const [otpSent,  setOtpSent]  = useState(false);
-  const [channel,  setChannel]  = useState(""); // "sms-twilio" | "sms-vonage" | "email-resend"
-  const [sending,  setSending]  = useState(false);
-  const [checking, setChecking] = useState(false);
-  const [error,    setError]    = useState("");
-  const [countdown, setCountdown] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
-
-  const startCountdown = () => {
-    setCountdown(60);
-    clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setCountdown(n => { if (n <= 1) { clearInterval(timerRef.current); return 0; } return n - 1; });
-    }, 1000);
-  };
-
-  const checkPassword = () => {
-    if (pw === project.access_password) { onGranted(); }
-    else { setError("Incorrect password. Please try again."); }
-  };
-
-  const sendOtp = async () => {
-    const contact = usePhone ? phone : email;
-    if (!contact) { setError(usePhone ? "Enter your phone number (with country code)." : "Enter your email address."); return; }
-    setSending(true); setError("");
-    const res = await fetch("/api/send-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        linkToken: link.token,
-        phone:  usePhone ? contact : undefined,
-        email:  usePhone ? undefined : contact,
-        projectTitle: project.title,
-        clientName: link.client_name,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setSending(false);
-    if (res.ok) { setOtpSent(true); setChannel(data.channel ?? ""); startCountdown(); }
-    else { setError(data.error ?? "Failed to send code. Please try again."); }
-  };
-
-  const verifyCode = async () => {
-    if (otpCode.length !== 6) { setError("Enter the 6-digit code."); return; }
-    setChecking(true); setError("");
-    const { valid } = await verifyOtp(link.token, otpCode);
-    setChecking(false);
-    if (valid) onGranted();
-    else setError("Invalid or expired code. Try again.");
-  };
-
-  const inp: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 14,
-    background: "hsl(240 14% 9%)", border: "1px solid hsl(240 10% 18%)",
-    color: "hsl(40 18% 88%)", outline: "none",
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: "hsl(240 15% 6%)" }}>
-      {/* Ambient glow */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
-          style={{ background: "radial-gradient(circle, hsl(258 78% 70%/0.06) 0%, transparent 65%)", filter: "blur(60px)" }} />
-      </div>
-
-      <motion.div className="relative w-full max-w-sm"
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}>
-
-        {/* Project thumbnail */}
-        {project.image_url && (
-          <div className="relative w-full h-36 rounded-2xl overflow-hidden mb-6"
-            style={{ border: "1px solid hsl(240 10% 14%)" }}>
-            <img src={project.image_url} alt={project.title}
-              className="absolute inset-0 w-full h-full object-cover" style={{ filter: "brightness(0.55)" }} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <p className="text-xs mb-1" style={{ color: "hsl(258 60% 75%)", fontFamily: "Georgia, serif" }}>
-                Private Preview
-              </p>
-              <h2 className="text-lg font-light text-center px-4" style={{ color: "hsl(40 18% 92%)", fontFamily: "Georgia, serif" }}>
-                {project.title}
-              </h2>
-              {link.client_name && (
-                <p className="text-xs mt-1" style={{ color: "hsl(40 10% 55%)" }}>for {link.client_name}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="rounded-2xl border p-7" style={{ background: "hsl(240 14% 9%)", borderColor: "hsl(240 10% 14%)" }}>
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "hsl(258 78% 70%/0.1)", border: "1px solid hsl(258 78% 70%/0.2)" }}>
-              {mode === "otp" ? <Mail size={15} style={{ color: "hsl(258 78% 72%)" }} />
-                              : <Lock size={15} style={{ color: "hsl(258 78% 72%)" }} />}
-            </div>
-            <div>
-              <h3 className="text-sm font-medium" style={{ color: "hsl(40 18% 85%)" }}>
-                {mode === "otp" ? "Email Verification" : "Access Required"}
-              </h3>
-              <p className="text-xs" style={{ color: "hsl(240 6% 48%)" }}>
-                {mode === "otp" ? "We'll send a 6-digit code via SMS or email" : "Enter the password to continue"}
-              </p>
-            </div>
-          </div>
-
-          {/* ── PASSWORD MODE ── */}
-          {mode === "password" && (
-            <div className="space-y-4">
-              <div className="relative">
-                <input
-                  type={showPw ? "text" : "password"}
-                  placeholder="Enter password"
-                  value={pw}
-                  onChange={e => { setPw(e.target.value); setError(""); }}
-                  onKeyDown={e => e.key === "Enter" && checkPassword()}
-                  style={inp}
-                  onFocus={e => e.currentTarget.style.borderColor = "hsl(258 60% 60%)"}
-                  onBlur={e => e.currentTarget.style.borderColor = "hsl(240 10% 18%)"}
-                />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                  style={{ color: "hsl(240 6% 42%)" }}>
-                  {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-              <GateBtn onClick={checkPassword} label="Continue" icon={<ArrowRight size={14} />} />
-            </div>
-          )}
-
-          {/* ── OTP MODE ── */}
-          {mode === "otp" && (
-            <div className="space-y-4">
-              {!otpSent ? (
-                <>
-                  {/* SMS / Email toggle */}
-                  <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: "hsl(240 10% 18%)" }}>
-                    {[{ id: true, label: "📱 SMS" }, { id: false, label: "✉️ Email" }].map(({ id, label }) => (
-                      <button key={String(id)} onClick={() => { setUsePhone(id); setError(""); }}
-                        className="flex-1 py-2 text-xs font-medium transition-all"
-                        style={{
-                          background: usePhone === id ? "hsl(258 60% 55%)" : "transparent",
-                          color: usePhone === id ? "#fff" : "hsl(240 6% 48%)",
-                        }}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  {usePhone ? (
-                    <input
-                      type="tel"
-                      placeholder="+91 98765 43210"
-                      value={phone}
-                      onChange={e => { setPhone(e.target.value); setError(""); }}
-                      onKeyDown={e => e.key === "Enter" && sendOtp()}
-                      style={inp}
-                      onFocus={e => e.currentTarget.style.borderColor = "hsl(258 60% 60%)"}
-                      onBlur={e => e.currentTarget.style.borderColor = "hsl(240 10% 18%)"}
-                    />
-                  ) : (
-                    <input
-                      type="email"
-                      placeholder="Your email address"
-                      value={email}
-                      onChange={e => { setEmail(e.target.value); setError(""); }}
-                      onKeyDown={e => e.key === "Enter" && sendOtp()}
-                      style={inp}
-                      onFocus={e => e.currentTarget.style.borderColor = "hsl(258 60% 60%)"}
-                      onBlur={e => e.currentTarget.style.borderColor = "hsl(240 10% 18%)"}
-                    />
-                  )}
-                  <GateBtn onClick={sendOtp} label={sending ? "Sending…" : `Send Code via ${usePhone ? "SMS" : "Email"}`} disabled={sending}
-                    icon={sending ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"/> : <Mail size={14}/>} />
-                </>
-              ) : (
-                <>
-                  <div className="text-center py-2">
-                    <CheckCircle2 size={18} className="mx-auto mb-2" style={{ color: "hsl(142 55% 52%)" }} />
-                    <p className="text-xs" style={{ color: "hsl(240 6% 52%)" }}>
-                      Code sent via{" "}
-                      <span style={{ color: "hsl(40 15% 72%)" }}>
-                        {channel.startsWith("sms") ? `SMS to ${phone}` : `email to ${email}`}
-                      </span>
-                    </p>
-                  </div>
-                  {/* 6-digit input */}
-                  <OtpInput value={otpCode} onChange={setOtpCode} />
-                  <GateBtn onClick={verifyCode} label={checking ? "Verifying…" : "Verify Code"} disabled={checking}
-                    icon={checking ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"/> : <ArrowRight size={14}/>} />
-                  <button
-                    onClick={() => { if (countdown === 0) { setOtpSent(false); setOtpCode(""); } }}
-                    className="w-full text-center text-xs py-1"
-                    style={{ color: countdown > 0 ? "hsl(240 6% 36%)" : "hsl(258 60% 65%)", cursor: countdown > 0 ? "default" : "pointer" }}>
-                    {countdown > 0 ? `Resend in ${countdown}s` : "Resend code"}
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Error */}
-          <AnimatePresence>
-            {error && (
-              <motion.p className="mt-3 text-xs rounded-lg px-3 py-2"
-                style={{ color: "hsl(0 65% 62%)", background: "hsl(0 50% 40%/0.08)", border: "1px solid hsl(0 50% 40%/0.18)" }}
-                initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                {error}
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <p className="text-center text-xs mt-4" style={{ color: "hsl(240 6% 34%)" }}>
-          Powered by VastuChitra ArchViz
-        </p>
-      </motion.div>
     </div>
   );
 }
@@ -358,23 +115,8 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
   );
 }
 
-function GateBtn({ onClick, label, icon, disabled }: {
-  onClick: () => void; label: string; icon?: React.ReactNode; disabled?: boolean;
-}) {
-  return (
-    <motion.button
-      onClick={onClick}
-      disabled={disabled}
-      className="w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
-      style={{ background: "hsl(258 78% 68%)", color: "#fff", opacity: disabled ? 0.7 : 1 }}
-      whileHover={disabled ? {} : { y: -1 }} whileTap={disabled ? {} : { scale: 0.97 }}>
-      {icon}{label}
-    </motion.button>
-  );
-}
-
 // ── Project View — what the client actually sees ───────────────────────────────
-function ProjectView({ project, link }: { project: Project; link: ProjectLink }) {
+function ProjectView({ project, auth }: { project: Project; auth: ProjectAuth }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [launching, setLaunching] = useState(false);
@@ -403,13 +145,13 @@ function ProjectView({ project, link }: { project: Project; link: ProjectLink })
       {/* Minimal top bar */}
       <header className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: bdr }}>
         <div>
-          <span className="text-sm font-light" style={{ color: fg, fontFamily: "Georgia, serif" }}>
-            VastuChitra <span style={{ color: acc }}>ArchViz</span>
+          <span className="text-sm font-bold tracking-tighter" style={{ color: "#fff" }}>
+            VASTU<span style={{ color: "#e2ffaf" }}>CHITRA</span>
           </span>
         </div>
         <div className="flex items-center gap-3">
-          {link.client_name && (
-            <span className="text-xs" style={{ color: sub }}>for {link.client_name}</span>
+          {auth.email && (
+            <span className="text-xs" style={{ color: sub }}>for {auth.email}</span>
           )}
           {/* Theme toggle */}
           <button onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -430,8 +172,8 @@ function ProjectView({ project, link }: { project: Project; link: ProjectLink })
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
 
             {/* Label */}
-            <p className="text-xs uppercase tracking-widest mb-4 text-center" style={{ color: acc, letterSpacing: "0.15em" }}>
-              Your Project Preview
+            <p className="text-[10px] uppercase font-bold tracking-[0.2em] mb-4 text-center" style={{ color: "#e2ffaf" }}>
+              Private Preview
             </p>
 
             {/* Card */}
@@ -480,10 +222,10 @@ function ProjectView({ project, link }: { project: Project; link: ProjectLink })
                 {project.stream_url ? (
                   <motion.button
                     onClick={() => setFormOpen(true)}
-                    className="w-full py-3 rounded-xl text-sm font-medium"
-                    style={{ background: acc, color: isDark ? "#fff" : "#fff", boxShadow: `0 6px 20px ${acc}33` }}
-                    whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}>
-                    Launch Immersive Tour →
+                    className="w-full py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest"
+                    style={{ background: "#e2ffaf", color: "#000", boxShadow: "0 10px 30px rgba(226, 255, 175, 0.2)" }}
+                    whileHover={{ scale: 1.02, y: -1 }} whileTap={{ scale: 0.98 }}>
+                    Launch Tour →
                   </motion.button>
                 ) : (
                   <div className="w-full py-3 rounded-xl text-sm text-center"
@@ -506,8 +248,8 @@ function ProjectView({ project, link }: { project: Project; link: ProjectLink })
         {formOpen && (
           <LaunchModal
             project={project}
-            clientName={link.client_name}
-            clientEmail={link.client_email}
+            auth={auth}
+            clientEmail={auth.email || ""}
             onClose={() => setFormOpen(false)}
             isDark={isDark}
           />
@@ -517,15 +259,100 @@ function ProjectView({ project, link }: { project: Project; link: ProjectLink })
   );
 }
 
-// ── Inline Launch Modal ────────────────────────────────────────────────────────
-function LaunchModal({ project, clientName, clientEmail, onClose, isDark }: {
-  project: Project; clientName: string; clientEmail: string;
+function LaunchModal({ project, auth, clientEmail, onClose, isDark }: {
+  project: Project; auth: ProjectAuth; clientEmail: string;
   onClose: () => void; isDark: boolean;
 }) {
-  const [name,    setName]    = useState(clientName || "");
+  const [name,    setName]    = useState("");
   const [email,   setEmail]   = useState(clientEmail || "");
   const [contact, setContact] = useState("");
   const [step,    setStep]    = useState<"form"|"launching">("form");
+
+  // Auth States
+  const [pw,       setPw]       = useState("");
+  const [showPw,   setShowPw]   = useState(false);
+  const [usePhone, setUsePhone] = useState(true); // prefer SMS for OTP
+  const [otpCode,  setOtpCode]  = useState("");
+  const [otpSent,  setOtpSent]  = useState(false);
+  const [channel,  setChannel]  = useState("");
+  const [sending,  setSending]  = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [error,    setError]    = useState("");
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
+
+  const requiresAuth = project.access_type !== "public";
+
+  const startCountdown = () => {
+    setCountdown(60);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCountdown(n => { if (n <= 1) { clearInterval(timerRef.current); return 0; } return n - 1; });
+    }, 1000);
+  };
+
+  const sendOtp = async () => {
+    const targetContact = usePhone ? contact : email;
+    if (!targetContact) { setError(usePhone ? "Enter your phone number above." : "Enter your email address above."); return; }
+    setSending(true); setError("");
+    const res = await fetch("/api/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        linkToken: auth.token,
+        phone:  usePhone ? targetContact : undefined,
+        email:  usePhone ? undefined : targetContact,
+        projectTitle: project.title,
+        clientName: name || "Valued Client",
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setSending(false);
+    if (res.ok) { setOtpSent(true); setChannel(data.channel ?? ""); startCountdown(); }
+    else { setError(data.error ?? "Failed to send code. Please try again."); }
+  };
+
+  const executeLaunch = async () => {
+    setStep("launching");
+    await fetch("/api/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, contact, project: project.title, projectId: project.id }),
+    }).catch(() => {});
+    
+    setTimeout(() => {
+      if (project.stream_url) window.open(project.stream_url, "_blank");
+    }, 800);
+  };
+
+  const submit = async () => {
+    if (!name || !email) return;
+
+    if (project.access_type === "password") {
+      if (pw !== project.access_password) {
+        setError("Incorrect password. Please try again.");
+        return;
+      }
+    } 
+    
+    if (project.access_type === "otp") {
+      if (!otpSent) {
+        // Only trigger send if they clicked launch without sending first
+        sendOtp();
+        return;
+      }
+      if (otpCode.length !== 6) { setError("Enter the 6-digit code."); return; }
+      setChecking(true); setError("");
+      const { valid } = await verifyOtp(project.id, otpCode);
+      setChecking(false);
+      if (!valid) {
+        setError("Invalid or expired code.");
+        return;
+      }
+    }
+
+    executeLaunch();
+  };
 
   const bg  = isDark ? "hsl(240 15% 6%)"  : "hsl(38 52% 95%)";
   const crd = isDark ? "hsl(240 14% 9%)"  : "hsl(38 40% 91%)";
@@ -540,27 +367,12 @@ function LaunchModal({ project, clientName, clientEmail, onClose, isDark }: {
     border: `1px solid ${bdr}`, color: fg, outline: "none",
   };
 
-  const submit = async () => {
-    if (!name || !email) return;
-    setStep("launching");
-    // Save visitor
-    await fetch("/api/send-email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, contact, project: project.title, projectId: project.id }),
-    }).catch(() => {});
-    // Open stream
-    setTimeout(() => {
-      if (project.stream_url) window.open(project.stream_url, "_blank");
-    }, 800);
-  };
-
   return (
     <motion.div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)" }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <motion.div className="w-full max-w-sm rounded-2xl border p-7"
+      <motion.div className="w-full max-w-sm rounded-2xl border p-7 max-h-[90vh] overflow-y-auto no-scrollbar"
         style={{ background: crd, borderColor: bdr }}
         initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
 
@@ -575,7 +387,8 @@ function LaunchModal({ project, clientName, clientEmail, onClose, isDark }: {
               </div>
               <button onClick={onClose} style={{ color: sub }}><X size={16} /></button>
             </div>
-            <div className="space-y-3 mb-4">
+
+            <div className="space-y-3 mb-5">
               <input placeholder="Your name" value={name} onChange={e => setName(e.target.value)} style={inp}
                 onFocus={e => e.currentTarget.style.borderColor = acc}
                 onBlur={e => e.currentTarget.style.borderColor = bdr} />
@@ -586,11 +399,95 @@ function LaunchModal({ project, clientName, clientEmail, onClose, isDark }: {
                 onFocus={e => e.currentTarget.style.borderColor = acc}
                 onBlur={e => e.currentTarget.style.borderColor = bdr} />
             </div>
-            <motion.button onClick={submit} disabled={!name || !email}
-              className="w-full py-3 rounded-xl text-sm font-medium"
-              style={{ background: acc, color: "#fff", opacity: (!name || !email) ? 0.5 : 1 }}
-              whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}>
-              Launch Tour →
+
+            {/* --- Auth Integration inside Modal --- */}
+            {requiresAuth && (
+              <div className="mb-6 space-y-4 pt-4 border-t" style={{ borderColor: bdr }}>
+                
+                <div className="flex items-center gap-2 mb-2">
+                  <Lock size={12} style={{ color: acc }} />
+                  <p className="text-xs font-medium" style={{ color: fg }}>
+                    {project.access_type === "password" ? "Password Required" : "Verification Required"}
+                  </p>
+                </div>
+
+                {project.access_type === "password" && (
+                  <div className="relative">
+                    <input
+                      type={showPw ? "text" : "password"}
+                      placeholder="Access password"
+                      value={pw}
+                      onChange={e => { setPw(e.target.value); setError(""); }}
+                      onKeyDown={e => e.key === "Enter" && submit()}
+                      style={inp}
+                      onFocus={e => e.currentTarget.style.borderColor = acc}
+                      onBlur={e => e.currentTarget.style.borderColor = bdr}
+                    />
+                    <button type="button" onClick={() => setShowPw(!showPw)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      style={{ color: sub }}>
+                      {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                )}
+
+                {project.access_type === "otp" && (
+                  <div className="space-y-3">
+                    {!otpSent ? (
+                      <>
+                        <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: bdr }}>
+                          {[{ id: true, label: "📱 SMS" }, { id: false, label: "✉️ Email" }].map(({ id, label }) => (
+                            <button key={String(id)} onClick={() => { setUsePhone(id); setError(""); }}
+                              className="flex-1 py-1.5 text-xs font-medium transition-all"
+                              style={{
+                                background: usePhone === id ? "hsl(258 60% 55%)" : "transparent",
+                                color: usePhone === id ? "#fff" : sub,
+                              }}>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={sendOtp} disabled={sending || (usePhone ? !contact : !email)}
+                          className="w-full py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-colors flex items-center justify-center gap-2"
+                          style={{ 
+                            borderColor: bdr, color: fg, 
+                            opacity: (sending || (usePhone ? !contact : !email)) ? 0.5 : 1 
+                          }}>
+                          {sending ? "Sending..." : `Send Code via ${usePhone ? "SMS" : "Email"}`}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-center mb-1" style={{ color: sub }}>
+                          Code sent to <span style={{ color: fg }}>{channel.startsWith("sms") ? contact : email}</span>
+                        </p>
+                        <OtpInput value={otpCode} onChange={setOtpCode} />
+                        <button
+                          onClick={() => { if (countdown === 0) { setOtpSent(false); setOtpCode(""); } }}
+                          className="w-full text-center text-xs py-1 mt-1"
+                          style={{ color: countdown > 0 ? "hsl(240 6% 36%)" : "hsl(258 60% 65%)", cursor: countdown > 0 ? "default" : "pointer" }}>
+                          {countdown > 0 ? `Resend in ${countdown}s` : "Resend code"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {error && (
+                  <p className="mt-2 text-xs text-red-400 bg-red-400/10 px-3 py-2 rounded-lg border border-red-400/20 text-center">
+                    {error}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <motion.button onClick={submit} disabled={!name || !email || checking}
+              className="w-full py-4 rounded-xl text-[10px] font-bold uppercase tracking-widest flex justify-center gap-2"
+              style={{ background: "#e2ffaf", color: "#000", opacity: (!name || !email || checking) ? 0.5 : 1 }}
+              whileHover={(!name || !email || checking) ? {} : { y: -1, scale: 1.02 }} 
+              whileTap={(!name || !email || checking) ? {} : { scale: 0.98 }}>
+              {checking ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"/> : "Launch Tour →"}
             </motion.button>
           </>
         ) : (

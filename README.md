@@ -53,7 +53,7 @@ Clients get a branded experience: browse projects, fill a lead form, and launch 
 ## Project Structure
 
 ```
-archviz-platform/
+VastuChitra/
 ├── app/
 │   ├── layout.tsx              # Root layout — fonts, providers, cursor, navbar
 │   ├── page.tsx                # Public homepage

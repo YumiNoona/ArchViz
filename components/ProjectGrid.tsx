@@ -3,9 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { ArrowUpRight, MapPin, LayoutGrid, Rows3, Filter } from "lucide-react";
-import { getProjects, Project, ProjectType } from "@/lib/supabase";
+import { getActiveProjects, Project, ProjectType } from "@/lib/supabase";
 import ProjectCarousel, { CarouselStyle } from "./ProjectCarousel";
-import { useSiteConfig } from "./SiteConfigProvider";
 
 const FILTERS: Array<ProjectType | "All"> = [
   "All", "Residential", "Commercial", "Mixed-Use", "Hospitality", "Cultural",
@@ -99,11 +98,10 @@ export default function ProjectGrid({ onSelectProject }: { onSelectProject: (p: 
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<ProjectType | "All">("All");
   const [view, setView] = useState<"carousel" | "grid">("grid"); // Default to grid for Vercel feel
-  const { layout } = useSiteConfig();
-  const carouselStyle = layout.carouselStyle;
+  const carouselStyle = "dynamic";
 
   useEffect(() => {
-    getProjects().then(d => { setProjects(d); setLoading(false); });
+    getActiveProjects().then(d => { setProjects(d); setLoading(false); });
   }, []);
 
   const filtered = filter === "All" ? projects : projects.filter(p => p.type === filter);

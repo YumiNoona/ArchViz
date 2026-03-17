@@ -4,10 +4,8 @@ import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
 import { haptic } from "ios-haptics";
-import { useSiteConfig } from "./SiteConfigProvider";
 
 export default function Contact() {
-  const { config } = useSiteConfig();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
@@ -21,9 +19,9 @@ export default function Contact() {
   };
 
   const contacts = [
-    { icon: Mail, label: "Email", value: config.contactEmail || "hello@vastuchitra.com", href: `mailto:${config.contactEmail || "hello@vastuchitra.com"}` },
-    { icon: Phone, label: "Phone", value: config.contactPhone || "+91 97639 65277", href: `tel:${config.contactPhone}` },
-    { icon: MapPin, label: "Studio", value: config.contactAddress || "Mumbai, Maharashtra", href: "#" },
+    { icon: Mail, label: "Email", value: "hello@vastuchitra.com", href: `mailto:hello@vastuchitra.com` },
+    { icon: Phone, label: "Phone", value: "+91 97639 65277", href: `tel:+91 97639 65277` },
+    { icon: MapPin, label: "Studio", value: "Mumbai, Maharashtra", href: "#" },
   ];
 
   return (
@@ -52,7 +50,7 @@ export default function Contact() {
               >
                 <div className="w-8 h-px bg-vastu-green" />
                 <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-vastu-green">
-                  {config.contactEyebrow || "Contact Us"}
+                  Contact Us
                 </span>
               </motion.div>
 
@@ -64,7 +62,7 @@ export default function Contact() {
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                     className="text-6xl lg:text-7xl font-medium tracking-tighter"
                   >
-                    {config.contactHeading || "Let's build"}
+                    Let's build
                   </motion.h2>
                 </div>
                 <div className="overflow-hidden">
@@ -74,7 +72,7 @@ export default function Contact() {
                     transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
                     className="text-6xl lg:text-7xl font-medium tracking-tighter text-sweep"
                   >
-                    {config.contactHeadingEm || "together."}
+                    together.
                   </motion.h2>
                 </div>
               </div>
@@ -85,7 +83,7 @@ export default function Contact() {
                 transition={{ delay: 0.2, duration: 0.7 }}
                 className="text-lg text-muted-foreground font-light leading-relaxed max-w-md"
               >
-                {config.contactBody || "Have a project in mind? Share your brief and we'll respond within 24 hours."}
+                Have a project in mind? Share your brief and we'll respond within 24 hours.
               </motion.p>
             </div>
 

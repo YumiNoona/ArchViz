@@ -2,7 +2,6 @@
 
 import { Inter, DM_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { SiteConfigProvider } from "@/components/SiteConfigProvider";
 import { Toaster } from "@/components/ui/Toaster";
 import "@/styles/globals.css";
 
@@ -31,10 +30,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${inter.variable} ${dmMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange={false}>
-          <SiteConfigProvider>
-            {children}
-            <Toaster />
-          </SiteConfigProvider>
+          {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

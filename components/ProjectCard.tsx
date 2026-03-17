@@ -6,7 +6,6 @@ import { useTheme } from "next-themes";
 import {
   Play, BookOpen, Activity, MapPin, Construction, Star, ChevronRight,
 } from "lucide-react";
-import { useSiteConfig } from "./SiteConfigProvider";
 import { haptic } from "ios-haptics";
 import type { Project } from "@/lib/supabase";
 
@@ -53,7 +52,6 @@ export default function ProjectCard({
   onViewUpdates,
   priority = false,
 }: ProjectCardProps) {
-  const { config } = useSiteConfig();
   const { resolvedTheme } = useTheme();
   const { tilt, onMouseMove, onMouseLeave } = use3DTilt();
   const [hovered, setHovered] = useState(false);
@@ -63,12 +61,12 @@ export default function ProjectCard({
       ? project.image_url_dark || project.image_url
       : project.image_url_light || project.image_url;
 
-  const hoverEffect = config?.cardHoverEffect ?? "glow";
+  const hoverEffect = "glow";
 
-  function cardShadow(): React.CSSProperties {
+  function cardShadow(): any {
     if (!hovered) return {};
     if (hoverEffect === "glow") return { boxShadow: "0 0 0 1px hsl(var(--primary)/0.4), 0 20px 60px hsl(var(--primary)/0.12)" };
-    if (hoverEffect === "lift") return { transform: "translateY(-8px)" };
+    if (hoverEffect === "lift") return { y: -8 };
     return {};
   }
 
@@ -110,14 +108,6 @@ export default function ProjectCard({
             transition={{ duration: 0.3 }}
             className="absolute inset-0 pointer-events-none"
           />
-
-          {hoverEffect === "tint" && (
-            <motion.div
-              animate={{ opacity: hovered ? 0.15 : 0 }}
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: "hsl(var(--primary))" }}
-            />
-          )}
 
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 to-transparent" />
 
@@ -296,10 +286,6 @@ export default function ProjectCard({
           </motion.button>
         </div>
 
-        {hoverEffect === "border-trace" && hovered && (
-          <div className="absolute inset-0 rounded-2xl pointer-events-none"
-            style={{ boxShadow: "inset 0 0 0 1px hsl(var(--primary)/0.45)" }} />
-        )}
       </motion.div>
     </motion.div>
   );

@@ -9,42 +9,51 @@ export const supabase = createClient(supabaseUrl, supabaseAnon);
 export type ProjectType  = "Residential" | "Commercial" | "Mixed-Use" | "Hospitality" | "Cultural";
 export type AccessType   = "public" | "password" | "otp";
 
+export interface BlogSection {
+  title: string;
+  body: string;
+  highlight_phrases?: string;
+}
+
+export interface SiteUpdate {
+  media_url: string;
+  media_type: "image" | "video" | "youtube";
+  thumbnail_url?: string;
+  caption?: string;
+}
+
 export interface Project {
   id: string;
   title: string;
   description: string;
   long_description: string;
   image_url: string;
-  image_url_dark: string;     // optional dark-mode thumbnail
-  image_url_light: string;    // optional light-mode thumbnail
+  image_url_dark: string;
+  image_url_light: string;
   stream_url: string;
   type: ProjectType;
   location: string;
   year: string;
   featured: boolean;
+  is_active: boolean;
   sort_order: number;
   access_type: AccessType;
   access_password: string;
+  status: "draft" | "published" | "discarded";
+  narrative_sections: BlogSection[];
+  gallery_updates: SiteUpdate[];
+  story?: string;
+  has_live_updates?: boolean;
   created_at?: string;
 }
 
-export interface ProjectLink {
+export interface ProjectAuth {
   id: string;
   project_id: string;
-  token: string;
-  client_name: string;
-  client_email: string;
-  note: string;
-  expires_at: string | null;
-  created_at: string;
-}
-
-export interface OtpCode {
-  id: string;
-  link_token: string;
-  code: string;
-  email: string;
-  expires_at: string;
+  email?: string;
+  code?: string;
+  token?: string;
+  expires_at?: string;
   used: boolean;
 }
 
@@ -54,31 +63,41 @@ export async function getProjects(): Promise<Project[]> {
     .from("projects")
     .select("*")
     .order("sort_order", { ascending: true });
+  
   if (error) console.error("getProjects:", error.message);
   return data ?? [];
 }
 
-export async function getProjectByToken(token: string): Promise<{ project: Project | null; link: ProjectLink | null }> {
-  const { data: link } = await supabase
-    .from("project_links")
+export async function getActiveProjects(): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  if (error) console.error("getActiveProjects:", error.message);
+  return data ?? [];
+}
+
+export async function getProjectByToken(token: string): Promise<{ project: Project | null; auth: ProjectAuth | null }> {
+  const { data: auth } = await supabase
+    .from("project_auth")
     .select("*")
     .eq("token", token)
     .single();
 
-  if (!link) return { project: null, link: null };
+  if (!auth) return { project: null, auth: null };
 
-  // Check expiry
-  if (link.expires_at && new Date(link.expires_at) < new Date()) {
-    return { project: null, link: null };
+  if (auth.expires_at && new Date(auth.expires_at) < new Date()) {
+    return { project: null, auth: null };
   }
 
   const { data: project } = await supabase
     .from("projects")
     .select("*")
-    .eq("id", link.project_id)
+    .eq("id", auth.project_id)
     .single();
 
-  return { project: project ?? null, link };
+  return { project: project ?? null, auth };
 }
 
 export async function createProject(
@@ -135,50 +154,22 @@ export async function updateProjectOrder(ids: string[]): Promise<void> {
   await Promise.all(ids.map((id, i) => supabase.from("projects").update({ sort_order: i }).eq("id", id)));
 }
 
-// ── Private links ─────────────────────────────────────────────────────────────
-export async function getLinksForProject(projectId: string): Promise<ProjectLink[]> {
-  const { data } = await supabase
-    .from("project_links")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: false });
-  return data ?? [];
-}
-
-export async function createLink(link: {
-  project_id: string;
-  client_name: string;
-  client_email: string;
-  note?: string;
-  expires_at?: string | null;
-}): Promise<{ data: ProjectLink | null; error: string | null }> {
-  const { data, error } = await supabase
-    .from("project_links")
-    .insert([link])
-    .select()
-    .single();
-  return { data: data ?? null, error: error?.message ?? null };
-}
-
-export async function deleteLink(id: string): Promise<void> {
-  await supabase.from("project_links").delete().eq("id", id);
-}
-
-// ── OTP ───────────────────────────────────────────────────────────────────────
-export async function createOtp(linkToken: string, email: string): Promise<{ code: string; error: string | null }> {
+// ── Access Control (Auth) ──────────────────────────────────────────────────
+export async function createOtp(projectId: string, email: string): Promise<{ code: string; error: string|null }> {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-  const { error } = await supabase.from("otp_codes").insert([{
-    link_token: linkToken, code, email, expires_at: expiresAt,
+  const { error } = await supabase.from("project_auth").insert([{
+    project_id: projectId, email, code, expires_at: expiresAt,
   }]);
   return { code, error: error?.message ?? null };
 }
 
-export async function verifyOtp(linkToken: string, code: string): Promise<{ valid: boolean }> {
+export async function verifyOtp(projectIdOrToken: string, code: string): Promise<{ valid: boolean }> {
+  // Try finding by token first (legacy/link) then projectId
   const { data } = await supabase
-    .from("otp_codes")
+    .from("project_auth")
     .select("*")
-    .eq("link_token", linkToken)
+    .or(`token.eq.${projectIdOrToken},project_id.eq.${projectIdOrToken}`)
     .eq("code", code)
     .eq("used", false)
     .gte("expires_at", new Date().toISOString())
@@ -187,8 +178,25 @@ export async function verifyOtp(linkToken: string, code: string): Promise<{ vali
     .single();
 
   if (!data) return { valid: false };
-  await supabase.from("otp_codes").update({ used: true }).eq("id", data.id);
+  await supabase.from("project_auth").update({ used: true }).eq("id", data.id);
   return { valid: true };
+}
+
+export async function getProjectToken(projectId: string): Promise<string> {
+  // Get existing or create a permanent one
+  const { data } = await supabase
+    .from("project_auth")
+    .select("token")
+    .eq("project_id", projectId)
+    .is("email", null) // permanent share link
+    .limit(1)
+    .single();
+
+  if (data?.token) return data.token;
+
+  const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  await supabase.from("project_auth").insert([{ project_id: projectId, token }]);
+  return token;
 }
 
 // ── Visitors ──────────────────────────────────────────────────────────────────
@@ -227,137 +235,30 @@ export async function getVisitorStats() {
   return { total, unique, byProject, recent7 };
 }
 
-// ── Blog / Construction / Site Updates ───────────────────────────────────────
-// (merged from supabase-blog.ts — delete that file after updating imports)
+// ── Consolidated Content (JSONB) ──────────────────────────────────────────────
 
-export interface BlogSection {
-  id?: string;
-  project_id?: string;
-  section_type: "challenge" | "about";
-  sort_order: number;
-  title: string;
-  body: string;
-  icon_name?: string;
-  highlight_phrases?: string; // comma-separated phrases to highlight in gold
-}
-
-export interface ConstructionPhase {
-  id?: string;
-  project_id?: string;
-  sort_order: number;
-  label: string;
-  status: "complete" | "active" | "upcoming";
-  percentage?: number;
-  phase_date?: string;
-}
-
-export interface SiteUpdate {
-  id?: string;
-  project_id?: string;
-  media_type: "image" | "video";
-  media_url: string;
-  caption?: string;
-  update_date?: string;
-  sort_order: number;
-}
-
-export interface ProjectBlogFull {
-  story?: string;
-  current_status?: string;
-  completion_percent?: number;
-  has_live_updates?: boolean;
-  blog_sections: BlogSection[];
-  construction_phases: ConstructionPhase[];
-  site_updates: SiteUpdate[];
-}
-
-/** Fetch full blog data for a single project */
-export async function getProjectBlog(projectId: string): Promise<ProjectBlogFull | null> {
-  const { data: proj, error: projErr } = await supabase
+export async function getProjectBlog(projectId: string): Promise<Project | null> {
+  const { data, error } = await supabase
     .from("projects")
-    .select("story, current_status, completion_percent, has_live_updates")
+    .select("*")
     .eq("id", projectId)
     .single();
-
-  if (projErr) {
-    console.error("getProjectBlog/projects:", projErr);
-    return null;
-  }
-
-  const { data: sections } = await supabase
-    .from("project_blog_sections")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("sort_order");
-
-  const { data: phases } = await supabase
-    .from("project_construction_phases")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("sort_order");
-
-  const { data: updates } = await supabase
-    .from("project_site_updates")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("sort_order");
-
-  return {
-    story: proj.story ?? undefined,
-    current_status: proj.current_status ?? undefined,
-    completion_percent: proj.completion_percent ?? 0,
-    has_live_updates: proj.has_live_updates ?? false,
-    blog_sections: sections ?? [],
-    construction_phases: phases ?? [],
-    site_updates: updates ?? [],
-  };
+  if (error) return null;
+  return data;
 }
 
-export async function updateProjectBlogOverview(
-  projectId: string,
-  patch: {
-    story?: string;
-    current_status?: string;
-    completion_percent?: number;
-    has_live_updates?: boolean;
-  }
-) {
-  const { error } = await supabase
-    .from("projects")
-    .update(patch)
-    .eq("id", projectId);
-  return { error };
+export async function updateProjectBlogOverview(projectId: string, patch: Partial<Project>) {
+  return updateProject(projectId, patch);
 }
 
-export async function upsertBlogSection(projectId: string, section: BlogSection) {
-  const payload = { ...section, project_id: projectId };
-  if (section.id) {
-    return supabase.from("project_blog_sections").update(payload).eq("id", section.id);
-  }
-  return supabase.from("project_blog_sections").insert(payload);
+export async function upsertBlogSection(projectId: string, sections: BlogSection[]) {
+  return updateProject(projectId, { narrative_sections: sections });
 }
 
-export async function deleteBlogSection(id: string) {
-  return supabase.from("project_blog_sections").delete().eq("id", id);
-}
-
-export async function upsertConstructionPhase(projectId: string, phase: ConstructionPhase) {
-  const payload = { ...phase, project_id: projectId };
-  if (phase.id) {
-    return supabase.from("project_construction_phases").update(payload).eq("id", phase.id);
-  }
-  return supabase.from("project_construction_phases").insert(payload);
-}
-
-export async function deleteConstructionPhase(id: string) {
-  return supabase.from("project_construction_phases").delete().eq("id", id);
-}
-
-/** Upload a file to `site-updates` bucket and insert a row */
 export async function addSiteUpdate(
   projectId: string,
   file: File,
-  meta: { caption?: string; update_date?: string; sort_order?: number }
+  existingGallery: SiteUpdate[]
 ) {
   const slug = projectId.slice(0, 8);
   const ext = file.name.split(".").pop();
@@ -370,24 +271,65 @@ export async function addSiteUpdate(
   if (uploadErr) return { error: uploadErr };
 
   const { data: urlData } = supabase.storage.from("site-updates").getPublicUrl(path);
-  const mediaType = file.type.startsWith("video") ? "video" : "image";
+  const mediaType = file.type.includes("video") || ext === "mp4" ? "video" : "image";
 
-  const { error: insertErr } = await supabase.from("project_site_updates").insert({
-    project_id: projectId,
-    media_type: mediaType,
+  const newUpdate: SiteUpdate = {
     media_url: urlData.publicUrl,
-    caption: meta.caption,
-    update_date: meta.update_date,
-    sort_order: meta.sort_order ?? 0,
+    media_type: mediaType as any,
+    caption: ""
+  };
+
+  const { error: updateErr } = await updateProject(projectId, {
+    gallery_updates: [...existingGallery, newUpdate]
   });
 
-  return { error: insertErr, url: urlData.publicUrl };
+  return { error: updateErr, url: urlData.publicUrl };
 }
 
-export async function deleteSiteUpdate(id: string, mediaUrl: string) {
+export async function setSiteUpdateThumbnail(projectId: string, index: number, file: File, existingGallery: SiteUpdate[]) {
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  const path = `${projectId}/${Date.now()}_thumb.${ext}`;
+
+  const { error: uploadErr } = await supabase.storage
+    .from("site-updates")
+    .upload(path, file, { cacheControl: "3600", upsert: true });
+
+  if (uploadErr) return { error: uploadErr };
+
+  const { data: urlData } = supabase.storage.from("site-updates").getPublicUrl(path);
+
+  const updatedGallery = [...existingGallery];
+  updatedGallery[index] = { ...updatedGallery[index], thumbnail_url: urlData.publicUrl };
+
+  const { error: updateErr } = await updateProject(projectId, {
+    gallery_updates: updatedGallery
+  });
+
+  return { error: updateErr, url: urlData.publicUrl };
+}
+
+export async function addYoutubeToGallery(projectId: string, url: string, existingGallery: SiteUpdate[]) {
+  // Try to normalize standard Youtube URLs to embeds or just save them raw
+  let cleanUrl = url.trim();
+  
+  const newUpdate: SiteUpdate = {
+    media_url: cleanUrl,
+    media_type: "youtube",
+    caption: ""
+  };
+
+  const { error: updateErr } = await updateProject(projectId, {
+    gallery_updates: [...existingGallery, newUpdate]
+  });
+
+  return { error: updateErr };
+}
+
+export async function deleteSiteUpdate(projectId: string, mediaUrl: string, existingGallery: SiteUpdate[]) {
   const urlParts = mediaUrl.split("/site-updates/");
   if (urlParts[1]) {
     await supabase.storage.from("site-updates").remove([urlParts[1]]);
   }
-  return supabase.from("project_site_updates").delete().eq("id", id);
+  const filtered = existingGallery.filter(u => u.media_url !== mediaUrl);
+  return updateProject(projectId, { gallery_updates: filtered });
 }

@@ -9,7 +9,7 @@
   --font-display: var(--font-geist);
   --font-body:    var(--font-geist);
   --font-mono:    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --radius: 0.5rem;
+  --radius: 0.85rem;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -144,7 +144,7 @@
 
   /* Vercel Button Styles */
   .btn-vercel {
-    @apply flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all;
+    @apply flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl text-sm font-medium transition-all;
     background: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
     border: 1px solid transparent;
@@ -157,7 +157,7 @@
   }
 
   .btn-secondary {
-    @apply flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all;
+    @apply flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl text-sm font-medium transition-all;
     background: hsl(var(--secondary));
     color: hsl(var(--foreground));
     border: 1px solid hsl(var(--border));

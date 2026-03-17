@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
-import { useSiteConfig } from "./SiteConfigProvider";
 import ThemeToggle from "./ThemeToggle";
 
 const navLinks = [
@@ -12,7 +11,6 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const { config } = useSiteConfig();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -38,7 +36,7 @@ export default function Navbar() {
               <span className="text-background font-bold text-xl leading-none">V</span>
             </div>
             <span className="text-base font-semibold tracking-tight">
-              {config.brand || "VastuChitra"}
+              VastuChitra
             </span>
           </a>
 

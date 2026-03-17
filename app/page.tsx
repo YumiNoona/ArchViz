@@ -11,24 +11,34 @@ import BackgroundCanvas from "@/components/BackgroundCanvas";
 import ProjectDetail from "@/components/ProjectDetail";
 import LaunchModal from "@/components/LaunchModal";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import type { Project } from "@/lib/supabase";
+import { supabase, type Project } from "@/lib/supabase";
 
 export default function Home() {
   const [detailProject, setDetailProject] = useState<Project | null>(null);
   const [launchProject, setLaunchProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // We could pre-fetch data here if needed
   useEffect(() => {
-    // Small delay to ensure styles are ready
-    const timer = setTimeout(() => {
-      // Logic for pre-loading assets could go here
-    }, 100);
-    return () => clearTimeout(timer);
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get("project");
+    if (projectId) {
+      supabase
+        .from("projects")
+        .select("*")
+        .eq("id", projectId)
+        .single()
+        .then(({ data }) => {
+          if (data) setDetailProject(data as Project);
+        });
+    }
   }, []);
 
   const handleBack = () => {
     setDetailProject(null);
+    if (window.history.pushState) {
+      const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      window.history.pushState({ path: newUrl }, "", newUrl);
+    }
     setTimeout(() => {
       document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" });
     }, 100);
