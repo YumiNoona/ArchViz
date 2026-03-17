@@ -1,29 +1,20 @@
 "use client";
 
-import { Cormorant_Garamond, DM_Sans, DM_Mono } from "next/font/google";
+import { Inter, DM_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { DebugProvider } from "@/components/DebugPanel";
 import { SiteConfigProvider } from "@/components/SiteConfigProvider";
 import { Toaster } from "@/components/ui/Toaster";
-import CustomCursor from "@/components/CustomCursor";
 import "@/styles/globals.css";
 
-const cormorant = Cormorant_Garamond({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-cormorant",
+  variable: "--font-inter",
   display: "swap",
 });
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
+
 const dmMono = DM_Mono({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["400", "500"],
   variable: "--font-dm-mono",
   display: "swap",
 });
@@ -32,20 +23,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>VastuChitra ArchViz — Interactive Architecture Experiences</title>
-        <meta name="description" content="Explore photorealistic real-time Unreal Engine architectural visualizations." />
+        <title>VastuChitra — Immersive ArchViz Platform</title>
+        <meta name="description" content="Premium Unreal Engine architectural visualization showcase." />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="shortcut icon" href="/favicon.svg" />
-        <meta name="theme-color" content="#0D1117" />
+        <meta name="theme-color" content="#000000" />
       </head>
-      <body className={`${cormorant.variable} ${dmSans.variable} ${dmMono.variable} antialiased`}>
+      <body className={`${inter.variable} ${dmMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange={false}>
           <SiteConfigProvider>
-            <DebugProvider>
-              <CustomCursor />
-              {children}
-              <Toaster />
-            </DebugProvider>
+            {children}
+            <Toaster />
           </SiteConfigProvider>
         </ThemeProvider>
       </body>

@@ -2,238 +2,186 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Google Fonts ───────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
-
-/* ─── Font vars ──────────────────────────────────────── */
+/* ─── Typography ─────────────────────────────────────── */
+/* Using Geist-inspired system fonts or premium sans-serifs */
 :root {
-  --font-display: var(--font-cormorant, 'Playfair Display', Georgia, serif);
-  --font-body:    var(--font-dm-sans, 'Outfit', system-ui, sans-serif);
-  --font-mono:    var(--font-dm-mono, 'DM Mono', monospace);
-  --radius: 0.75rem;
+  --font-geist: "Geist Var", "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-geist);
+  --font-body:    var(--font-geist);
+  --font-mono:    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --radius: 0.5rem;
 }
 
 /* ══════════════════════════════════════════════════════
-   DARK MODE  — Ash / Charcoal / Warm White
-   No purple, no blue. Pure dark architecture.
+   VERCEL THEME - DARK
    ══════════════════════════════════════════════════════ */
 :root, .dark {
-  --background:          16 8% 7%;         /* near-black charcoal  */
-  --foreground:          30 12% 92%;        /* warm off-white       */
-  --card:                20 6% 10%;         /* soft dark            */
-  --card-foreground:     30 12% 92%;
-  --popover:             20 6% 10%;
-  --popover-foreground:  30 12% 92%;
-  --primary:             38 70% 62%;        /* warm amber gold      */
-  --primary-foreground:  20 8% 6%;
-  --secondary:           20 5% 14%;
-  --secondary-foreground:30 10% 75%;
-  --muted:               20 5% 14%;
-  --muted-foreground:    25 6% 52%;
-  --accent:              38 70% 62%;
-  --accent-foreground:   20 8% 6%;
-  --destructive:         0 72% 56%;
+  --background:          0 0% 0%;           /* Pure Black */
+  --foreground:          0 0% 100%;         /* Pure White */
+  --card:                0 0% 0%;
+  --card-foreground:     0 0% 100%;
+  --popover:             0 0% 0%;
+  --popover-foreground:  0 0% 100%;
+  --primary:             0 0% 100%;
+  --primary-foreground:  0 0% 0%;
+  --secondary:           0 0% 10%;
+  --secondary-foreground:0 0% 100%;
+  --muted:               0 0% 10%;
+  --muted-foreground:    0 0% 63%;
+  --accent:              79 100% 84%;       /* Vastu Green: #e2ffaf */
+  --accent-foreground:   0 0% 0%;
+  --destructive:         0 62% 30%;
   --destructive-foreground: 0 0% 100%;
-  --border:              20 5% 15%;
-  --input:               20 5% 15%;
-  --ring:                38 70% 62%;
+  --border:              0 0% 12%;          /* Subtle Vercel Border */
+  --input:               0 0% 12%;
+  --ring:                0 0% 100%;
 
-  /* Custom surface vars */
-  --surface-1:   20 6% 10%;
-  --surface-2:   20 5% 14%;
-  --surface-3:   20 4% 18%;
-  --glow-gold:   38 70% 62%;
-  --glow-warm:   28 60% 55%;
+  /* Vastu Specifics */
+  --vastu-green:         79 100% 84%;
+  --bevel-top:           rgba(255, 255, 255, 0.05);
+  --bevel-bottom:        rgba(0, 0, 0, 0.2);
 }
 
 /* ══════════════════════════════════════════════════════
-   LIGHT MODE — Warm Cream / Sand / Amber
-   Welcoming, bright, editorial warmth.
+   VERCEL THEME - LIGHT
    ══════════════════════════════════════════════════════ */
 .light {
-  --background:          38 55% 97%;        /* warm cream           */
-  --foreground:          20 20% 10%;        /* dark charcoal        */
-  --card:                36 45% 94%;        /* slightly deeper cream */
-  --card-foreground:     20 20% 10%;
-  --popover:             38 60% 99%;
-  --popover-foreground:  20 20% 10%;
-  --primary:             28 80% 46%;        /* rich amber           */
+  --background:          0 0% 100%;         /* Pure White */
+  --foreground:          0 0% 0%;           /* Pure Black */
+  --card:                0 0% 100%;
+  --card-foreground:     0 0% 0%;
+  --popover:             0 0% 100%;
+  --popover-foreground:  0 0% 0%;
+  --primary:             0 0% 0%;
   --primary-foreground:  0 0% 100%;
-  --secondary:           36 30% 88%;
-  --secondary-foreground:20 18% 18%;
-  --muted:               36 30% 88%;
-  --muted-foreground:    25 15% 44%;
-  --accent:              28 80% 46%;
+  --secondary:           0 0% 96%;
+  --secondary-foreground:0 0% 0%;
+  --muted:               0 0% 96%;
+  --muted-foreground:    0 0% 40%;
+  --accent:              79 60% 50%;        /* Darker Green for Light */
   --accent-foreground:   0 0% 100%;
-  --destructive:         0 80% 52%;
+  --destructive:         0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border:              36 20% 82%;
-  --input:               36 20% 82%;
-  --ring:                28 80% 46%;
+  --border:              0 0% 92%;          /* Vercel Light Border #eaeaea */
+  --input:               0 0% 92%;
+  --ring:                0 0% 0%;
 
-  --surface-1:   36 40% 93%;
-  --surface-2:   35 30% 88%;
-  --surface-3:   34 25% 84%;
-  --glow-gold:   28 80% 46%;
-  --glow-warm:   32 65% 52%;
+  --vastu-green:         79 100% 40%;
+  --bevel-top:           rgba(255, 255, 255, 0.8);
+  --bevel-bottom:        rgba(0, 0, 0, 0.05);
 }
 
 /* ─── Base ────────────────────────────────────────────── */
 @layer base {
-  * { @apply border-border; box-sizing: border-box; }
-  html { scroll-behavior: smooth; overflow-x: hidden; }
-
+  * { @apply border-border; }
+  
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    overflow-x: hidden;
   }
 
-  h1, h2, h3, h4 { font-family: var(--font-display); }
+  h1, h2, h3, h4 { @apply font-medium tracking-tight; }
 
   ::selection {
-    background: hsl(var(--primary)/0.18);
-    color: hsl(var(--primary));
-  }
-
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 2px;
+    background: hsl(var(--vastu-green));
+    color: #000;
   }
 }
 
 /* ─── Utilities ───────────────────────────────────────── */
 @layer utilities {
-
-  /* Text gradients — dark: warm gold-amber, light: deep amber */
-  .text-gradient {
-    background: linear-gradient(125deg,
-      hsl(38 72% 68%) 0%,
-      hsl(28 85% 62%) 45%,
-      hsl(42 68% 72%) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .light .text-gradient {
-    background: linear-gradient(125deg,
-      hsl(28 82% 42%) 0%,
-      hsl(18 78% 48%) 50%,
-      hsl(32 75% 44%) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .text-gradient-gold {
-    background: linear-gradient(120deg,
-      hsl(38 65% 58%) 0%,
-      hsl(44 72% 70%) 50%,
-      hsl(36 60% 56%) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Noise texture overlay */
-  .noise-overlay::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.4;
-  }
-
-  /* Glow effects */
-  .glow-gold {
-    box-shadow: 0 0 32px hsl(var(--glow-gold)/0.18), 0 0 8px hsl(var(--glow-gold)/0.1);
-  }
-  .glow-card {
-    box-shadow: 0 0 0 1px hsl(var(--border));
-    transition: box-shadow 0.35s ease;
-  }
-  .glow-card:hover {
-    box-shadow:
-      0 0 0 1px hsl(var(--primary)/0.22),
-      0 12px 48px hsl(var(--primary)/0.1),
-      0 4px 12px hsl(0 0% 0%/0.15);
-  }
-
-  /* Surface backgrounds */
-  .bg-surface-1 { background-color: hsl(var(--surface-1)); }
-  .bg-surface-2 { background-color: hsl(var(--surface-2)); }
-  .bg-surface-3 { background-color: hsl(var(--surface-3)); }
-
-  /* Grain overlay — subtle texture */
-  .grain {
+  /* Vercel-style Beveling */
+  .bevel-card {
     position: relative;
-  }
-  .grain::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 0;
-    border-radius: inherit;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    box-shadow: 
+      inset 0 1px 0 0 var(--bevel-top),
+      0 1px 2px 0 var(--bevel-bottom);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Animated gradient border */
-  .border-glow {
+  .bevel-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 
+      inset 0 1px 0 0 var(--bevel-top),
+      0 4px 12px 0 var(--bevel-bottom);
+  }
+
+  .light .bevel-card:hover {
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+
+  /* Kinetic Typography (Sweeping Light) */
+  .text-sweep {
     position: relative;
+    color: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(
+      90deg, 
+      rgba(255, 255, 255, 0) 0%, 
+      rgba(255, 255, 255, 0.8) 50%, 
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: sweep 4s linear infinite;
   }
-  .border-glow::before {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    background: linear-gradient(135deg,
-      hsl(var(--primary)/0.4) 0%,
-      transparent 40%,
-      transparent 60%,
-      hsl(var(--primary)/0.2) 100%);
-    pointer-events: none;
-    z-index: -1;
+
+  .light .text-sweep {
+    color: rgba(0, 0, 0, 0.1);
+    background: linear-gradient(
+      90deg, 
+      rgba(0, 0, 0, 0) 0%, 
+      rgba(0, 0, 0, 0.6) 50%, 
+      rgba(0, 0, 0, 0) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  /* Vercel Button Styles */
+  .btn-vercel {
+    @apply flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    border: 1px solid transparent;
+  }
+
+  .btn-vercel:hover {
+    background: transparent;
+    border-color: hsl(var(--primary));
+    color: hsl(var(--primary));
+  }
+
+  .btn-secondary {
+    @apply flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all;
+    background: hsl(var(--secondary));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+  }
+
+  .btn-secondary:hover {
+    background: hsl(var(--background));
+    border-color: hsl(var(--foreground)/0.3);
   }
 }
 
-/* ─── Scroll animations ───────────────────────────────── */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
-}
-@keyframes pulse-ring {
-  0%   { transform: scale(1);   opacity: 0.5; }
-  100% { transform: scale(1.8); opacity: 0; }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-}
-@keyframes rotate-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+/* ─── Animations ─────────────────────────────────────── */
+@keyframes sweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-.animate-float      { animation: float 4s ease-in-out infinite; }
-.animate-float-slow { animation: float 6s ease-in-out infinite; }
-.animate-spin-slow  { animation: spin-slow 12s linear infinite; }
-.animate-shimmer    {
-  background: linear-gradient(90deg,
-    transparent 0%,
-    hsl(var(--primary)/0.12) 50%,
-    transparent 100%);
-  background-size: 200% 100%;
-  animation: shimmer 2.5s ease-in-out infinite;
+@keyframes draw-line {
+  0% { height: 0; opacity: 0; }
+  50% { opacity: 1; }
+  100% { height: 100%; opacity: 0; }
 }
+
+.animate-draw-line {
+  animation: draw-line 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+

@@ -30,6 +30,7 @@ import {
   Clock,
   AlertCircle,
   Loader2,
+  Activity,
 } from "lucide-react";
 import {
   getProjectBlog,
@@ -54,24 +55,24 @@ interface Project { id: string; title: string; image_url: string; type: string; 
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div>
-      <label className="block text-xs font-mono text-[var(--vc-muted)] uppercase tracking-widest mb-1.5">{label}</label>
+    <div className="space-y-2">
+      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{label}</label>
       {children}
     </div>
   );
 }
 
 function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input className="w-full px-3 py-2 rounded-xl bg-[var(--vc-bg)] border border-[var(--vc-border)] text-[var(--vc-fg)] text-sm font-sans focus:outline-none focus:border-[var(--vc-gold)]/50 transition-colors" {...props} />;
+  return <input className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 border border-border text-foreground text-sm font-sans focus:outline-none focus:ring-1 focus:ring-vastu-green/20 focus:border-vastu-green/50 transition-all" {...props} />;
 }
 
 function Textarea({ ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className="w-full px-3 py-2 rounded-xl bg-[var(--vc-bg)] border border-[var(--vc-border)] text-[var(--vc-fg)] text-sm font-sans focus:outline-none focus:border-[var(--vc-gold)]/50 transition-colors resize-none" rows={3} {...props} />;
+  return <textarea className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 border border-border text-foreground text-sm font-sans focus:outline-none focus:ring-1 focus:ring-vastu-green/20 focus:border-vastu-green/50 transition-all resize-none" rows={3} {...props} />;
 }
 
 function Select({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement> & { children: React.ReactNode }) {
   return (
-    <select className="w-full px-3 py-2 rounded-xl bg-[var(--vc-bg)] border border-[var(--vc-border)] text-[var(--vc-fg)] text-sm font-sans focus:outline-none focus:border-[var(--vc-gold)]/50 transition-colors" {...props}>
+    <select className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 border border-border text-foreground text-sm font-sans focus:outline-none focus:ring-1 focus:ring-vastu-green/20 focus:border-vastu-green/50 transition-all appearance-none cursor-pointer" {...props}>
       {children}
     </select>
   );
@@ -82,10 +83,10 @@ function SaveBtn({ loading, onClick }: { loading?: boolean; onClick: () => void 
     <button
       onClick={() => { haptic(); onClick(); }}
       disabled={loading}
-      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--vc-gold)] text-black font-sans font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+      className="btn-vercel h-10 px-6 text-sm flex items-center gap-2"
     >
       {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-      Save
+      Save Changes
     </button>
   );
 }
@@ -93,31 +94,14 @@ function SaveBtn({ loading, onClick }: { loading?: boolean; onClick: () => void 
 // ─── Phase status icon ────────────────────────────────────────────────────────
 
 function PhaseIcon({ status }: { status: string }) {
-  if (status === "complete") return <CheckCircle2 size={14} className="text-[var(--vc-gold)]" />;
-  if (status === "active") return <Circle size={14} className="text-emerald-400 animate-pulse" />;
-  return <Clock size={14} className="text-[var(--vc-muted)]" />;
+  if (status === "complete") return <CheckCircle2 size={14} className="text-vastu-green" />;
+  if (status === "active") return <Circle size={14} className="text-vastu-green animate-pulse" />;
+  return <Clock size={14} className="text-muted-foreground" />;
 }
 
 // ─── Main Admin Blog Tab ──────────────────────────────────────────────────────
 
 export default function AdminBlogTab() {
-  // Inject CSS vars matching the admin panel dark theme so --vc-* classes resolve
-  useEffect(() => {
-    const id = "vc-admin-blog-vars";
-    if (document.getElementById(id)) return;
-    const s = document.createElement("style");
-    s.id = id;
-    s.textContent = `:root {
-      --vc-bg: hsl(0 0% 4%);
-      --vc-card: hsl(0 0% 6%);
-      --vc-fg: hsl(0 0% 93%);
-      --vc-muted: hsl(0 0% 45%);
-      --vc-border: hsl(0 0% 12%);
-      --vc-gold: #c4a478;
-    }`;
-    document.head.appendChild(s);
-    return () => { document.getElementById(id)?.remove(); };
-  }, []);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [blog, setBlog] = useState<Awaited<ReturnType<typeof getProjectBlog>> | null>(null);
@@ -284,12 +268,14 @@ export default function AdminBlogTab() {
       </AnimatePresence>
 
       {/* Project selector */}
-      <div className="flex items-center gap-3">
-        <BookOpen size={16} className="text-[var(--vc-gold)]" />
-        <h2 className="font-serif text-2xl text-[var(--vc-fg)]">Project Blog & Updates</h2>
-        <div className="ml-auto w-64">
+      <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
+        <div className="flex items-center gap-3">
+          <BookOpen size={18} className="text-vastu-green" />
+          <h2 className="text-xl font-medium tracking-tight">Project Blog & Updates</h2>
+        </div>
+        <div className="w-full md:w-64">
           <Select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
-            {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            {projects.map((p) => <option key={p.id} value={p.id} className="bg-background">{p.title}</option>)}
           </Select>
         </div>
       </div>
@@ -299,30 +285,39 @@ export default function AdminBlogTab() {
       ) : (
         <>
           {/* ── Section A: Overview ── */}
-          <section className="rounded-2xl border border-[var(--vc-border)] bg-[var(--vc-card)] p-6 space-y-4">
-            <h3 className="font-serif text-xl text-[var(--vc-fg)] flex items-center gap-2"><Construction size={16} className="text-[var(--vc-gold)]" />Overview</h3>
+          <section className="bevel-card p-6 bg-secondary/30 space-y-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-background border border-border text-vastu-green">
+                <Construction size={18} />
+              </div>
+              <h3 className="text-lg font-medium tracking-tight">Build Overview</h3>
+            </div>
 
             <Field label="Project Story">
-              <Textarea value={story} onChange={(e) => setStory(e.target.value)} rows={5} placeholder="Write the story of this project..." />
+              <Textarea value={story} onChange={(e) => setStory(e.target.value)} rows={6} placeholder="Write the story of this project..." />
             </Field>
-            <Field label="Current Build Status (shown in real-time section)">
-              <Input value={currentStatus} onChange={(e) => setCurrentStatus(e.target.value)} placeholder="e.g. Structure 72% complete. Facade installation commencing Q2 2025." />
-            </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Completion % (0–100)">
-                <Input type="number" min={0} max={100} value={completionPercent} onChange={(e) => setCompletionPercent(Number(e.target.value))} />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Field label="Current Status">
+                <Input value={currentStatus} onChange={(e) => setCurrentStatus(e.target.value)} placeholder="e.g. Structure 72% complete." />
               </Field>
-              <Field label="Live Updates Badge">
-                <div
-                  onClick={() => { haptic(); setHasLiveUpdates(!hasLiveUpdates); }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${hasLiveUpdates ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" : "border-[var(--vc-border)] text-[var(--vc-muted)]"}`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${hasLiveUpdates ? "bg-emerald-400 animate-pulse" : "bg-[var(--vc-border)]"}`} />
-                  <span className="text-sm font-sans">{hasLiveUpdates ? "Live" : "Not Live"}</span>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Completion %">
+                  <Input type="number" min={0} max={100} value={completionPercent} onChange={(e) => setCompletionPercent(Number(e.target.value))} />
+                </Field>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Live Updates</label>
+                  <button
+                    onClick={() => { haptic(); setHasLiveUpdates(!hasLiveUpdates); }}
+                    className={`flex items-center justify-center gap-2 h-10 w-full rounded-xl border transition-all ${hasLiveUpdates ? "border-vastu-green/40 bg-vastu-green/10 text-vastu-green" : "border-border bg-secondary/30 text-muted-foreground"}`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${hasLiveUpdates ? "bg-vastu-green animate-pulse" : "bg-muted-foreground/30"}`} />
+                    <span className="text-xs font-semibold">{hasLiveUpdates ? "Active" : "Disabled"}</span>
+                  </button>
                 </div>
-              </Field>
+              </div>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-4 border-t border-border/50">
               <SaveBtn loading={saving === "overview"} onClick={saveOverview} />
             </div>
           </section>
@@ -331,121 +326,158 @@ export default function AdminBlogTab() {
           {(["about", "challenge"] as const).map((type) => {
             const sections = blog?.blog_sections.filter((s) => s.section_type === type) ?? [];
             return (
-              <section key={type} className="rounded-2xl border border-[var(--vc-border)] bg-[var(--vc-card)] p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-serif text-xl text-[var(--vc-fg)] flex items-center gap-2">
-                    <Layers size={16} className="text-[var(--vc-gold)]" />
-                    {type === "about" ? "About Sections" : "Challenge Sections"}
-                  </h3>
-                  <button onClick={() => { haptic(); addSection(type); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--vc-gold)]/10 border border-[var(--vc-gold)]/20 text-[var(--vc-gold)] text-xs font-sans hover:bg-[var(--vc-gold)]/20 transition-colors">
-                    <Plus size={12} />Add
+              <section key={type} className="bevel-card p-6 bg-secondary/20 space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-background border border-border text-vastu-green">
+                      <Layers size={18} />
+                    </div>
+                    <h3 className="text-lg font-medium tracking-tight">
+                      {type === "about" ? "Project About" : "Project Challenges"}
+                    </h3>
+                  </div>
+                  <button onClick={() => { haptic(); addSection(type); }} className="px-4 py-2 rounded-xl bg-foreground text-background text-xs font-bold hover:opacity-90 transition-all flex items-center gap-2">
+                    <Plus size={14} /> Add Section
                   </button>
                 </div>
 
                 {sections.length === 0 && (
-                  <p className="text-[var(--vc-muted)] text-sm font-sans py-4 text-center">No sections yet. Add one above.</p>
+                  <p className="text-muted-foreground text-sm font-light py-8 text-center bg-secondary/30 rounded-xl border border-dashed border-border">No content sections yet.</p>
                 )}
 
-                {sections.map((s, i) => (
-                  <div key={s.id ?? i} className="rounded-xl border border-[var(--vc-border)] p-4 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <Field label="Title"><Input defaultValue={s.title} onBlur={(e) => { s.title = e.target.value; }} /></Field>
-                      <Field label="Icon (lucide name)"><Input defaultValue={s.icon_name} placeholder="e.g. Layers" onBlur={(e) => { s.icon_name = e.target.value; }} /></Field>
+                <div className="space-y-6">
+                  {sections.map((s, i) => (
+                    <div key={s.id ?? i} className="p-6 rounded-2xl bg-background border border-border space-y-4 relative group">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Field label="Title"><Input defaultValue={s.title} onBlur={(e) => { s.title = e.target.value; }} /></Field>
+                        <Field label="Lucide Icon Name"><Input defaultValue={s.icon_name} placeholder="e.g. Layers" onBlur={(e) => { s.icon_name = e.target.value; }} /></Field>
+                      </div>
+                      <Field label="Section Content"><Textarea defaultValue={s.body} rows={4} onBlur={(e) => { s.body = e.target.value; }} /></Field>
+                      <Field label="Highlight Phrases (comma-separated)">
+                        <Input
+                          defaultValue={s.highlight_phrases ?? ""}
+                          placeholder="e.g. award-winning design, sustainable materials"
+                          onBlur={(e) => { s.highlight_phrases = e.target.value; }}
+                        />
+                      </Field>
+                      <div className="flex justify-between items-center pt-4 border-t border-border/50">
+                        <button onClick={() => { haptic.error(); removeSection(s.id!); }} className="flex items-center gap-2 text-red-400 text-xs font-semibold hover:text-red-300 transition-colors">
+                          <Trash2 size={14} /> Delete Section
+                        </button>
+                        <SaveBtn loading={saving === `section-${s.id}`} onClick={() => saveSection(s)} />
+                      </div>
                     </div>
-                    <Field label="Body"><Textarea defaultValue={s.body} onBlur={(e) => { s.body = e.target.value; }} /></Field>
-                    <Field label="Highlight Phrases (comma-separated — shown in gold italic on site)">
-                      <Input
-                        defaultValue={s.highlight_phrases ?? ""}
-                        placeholder="e.g. award-winning design, sustainable materials, 12 months"
-                        onBlur={(e) => { s.highlight_phrases = e.target.value; }}
-                      />
-                    </Field>
-                    <div className="flex justify-between">
-                      <button onClick={() => { haptic.error(); removeSection(s.id!); }} className="flex items-center gap-1 text-red-400 text-xs font-sans hover:text-red-300 transition-colors"><Trash2 size={12} />Delete</button>
-                      <SaveBtn loading={saving === `section-${s.id}`} onClick={() => saveSection(s)} />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </section>
             );
           })}
 
           {/* ── Section C: Construction Phases ── */}
-          <section className="rounded-2xl border border-[var(--vc-border)] bg-[var(--vc-card)] p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-serif text-xl text-[var(--vc-fg)] flex items-center gap-2"><Construction size={16} className="text-[var(--vc-gold)]" />Construction Phases</h3>
-              <button onClick={() => { haptic(); addPhase(); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--vc-gold)]/10 border border-[var(--vc-gold)]/20 text-[var(--vc-gold)] text-xs font-sans hover:bg-[var(--vc-gold)]/20 transition-colors">
-                <Plus size={12} />Add Phase
+          <section className="bevel-card p-6 bg-secondary/20 space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-background border border-border text-vastu-green">
+                  <Activity size={18} />
+                </div>
+                <h3 className="text-lg font-medium tracking-tight">Timeline & Phases</h3>
+              </div>
+              <button onClick={() => { haptic(); addPhase(); }} className="px-4 py-2 rounded-xl bg-foreground text-background text-xs font-bold hover:opacity-90 transition-all flex items-center gap-2">
+                <Plus size={14} /> Add Phase
               </button>
             </div>
 
-            {(blog?.construction_phases ?? []).map((p, i) => (
-              <div key={p.id ?? i} className="rounded-xl border border-[var(--vc-border)] p-4 space-y-3">
-                <div className="grid grid-cols-3 gap-3">
-                  <Field label="Phase Label"><Input defaultValue={p.label} onBlur={(e) => { p.label = e.target.value; }} /></Field>
-                  <Field label="Status">
-                    <Select defaultValue={p.status} onChange={(e) => { p.status = e.target.value as "complete" | "active" | "upcoming"; }}>
-                      <option value="complete">✓ Complete</option>
-                      <option value="active">⬤ Active</option>
-                      <option value="upcoming">○ Upcoming</option>
-                    </Select>
-                  </Field>
-                  <Field label="Date (e.g. Q2 2025)"><Input defaultValue={p.phase_date} onBlur={(e) => { p.phase_date = e.target.value; }} /></Field>
+            <div className="space-y-4">
+              {(blog?.construction_phases ?? []).map((p, i) => (
+                <div key={p.id ?? i} className="p-6 rounded-2xl bg-background border border-border space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Field label="Phase Label"><Input defaultValue={p.label} onBlur={(e) => { p.label = e.target.value; }} /></Field>
+                    <Field label="Current Status">
+                      <Select defaultValue={p.status} onChange={(e) => { p.status = e.target.value as "complete" | "active" | "upcoming"; }}>
+                        <option value="complete" className="bg-background">✓ Complete</option>
+                        <option value="active" className="bg-background">⬤ Active</option>
+                        <option value="upcoming" className="bg-background">○ Upcoming</option>
+                      </Select>
+                    </Field>
+                    <Field label="Target/Actual Date"><Input defaultValue={p.phase_date} placeholder="e.g. Q4 2024" onBlur={(e) => { p.phase_date = e.target.value; }} /></Field>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="w-32">
+                      <Field label="Progress %"><Input type="number" min={0} max={100} defaultValue={p.percentage} onBlur={(e) => { p.percentage = Number(e.target.value); }} /></Field>
+                    </div>
+                    <div className="flex-1 pt-6">
+                      <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                        <div className="h-full bg-vastu-green" style={{ width: `${p.percentage}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-4 border-t border-border/50">
+                    <button onClick={() => { haptic.error(); removePhase(p.id!); }} className="flex items-center gap-2 text-red-400 text-xs font-semibold hover:text-red-300 transition-colors">
+                      <Trash2 size={14} /> Delete Phase
+                    </button>
+                    <SaveBtn loading={saving === `phase-${p.id}`} onClick={() => savePhase(p)} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Field label="Progress % (active only)">
-                    <Input type="number" min={0} max={100} defaultValue={p.percentage} className="w-24" onBlur={(e) => { p.percentage = Number(e.target.value); }} />
-                  </Field>
-                </div>
-                <div className="flex justify-between">
-                  <button onClick={() => { haptic.error(); removePhase(p.id!); }} className="flex items-center gap-1 text-red-400 text-xs font-sans hover:text-red-300 transition-colors"><Trash2 size={12} />Delete</button>
-                  <SaveBtn loading={saving === `phase-${p.id}`} onClick={() => savePhase(p)} />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </section>
 
           {/* ── Section D: Site Update Media ── */}
-          <section className="rounded-2xl border border-[var(--vc-border)] bg-[var(--vc-card)] p-6 space-y-4">
-            <h3 className="font-serif text-xl text-[var(--vc-fg)] flex items-center gap-2">
-              <ImageIcon size={16} className="text-[var(--vc-gold)]" />Real-Time Site Updates
-            </h3>
+          <section className="bevel-card p-6 bg-secondary/20 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-background border border-border text-vastu-green">
+                <Upload size={18} />
+              </div>
+              <h3 className="text-lg font-medium tracking-tight">Project Live Updates</h3>
+            </div>
 
             {/* Upload form */}
-            <div className="rounded-xl border border-dashed border-[var(--vc-border)] p-5 space-y-3">
-              <p className="text-xs font-mono text-[var(--vc-muted)] uppercase tracking-widest">Upload Image or Video</p>
-              <input ref={fileRef} type="file" accept="image/*,video/*" className="block text-sm font-sans text-[var(--vc-muted)] file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-[var(--vc-gold)]/10 file:text-[var(--vc-gold)] file:text-xs file:font-sans file:cursor-pointer" />
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Caption"><Input value={uploadCaption} onChange={(e) => setUploadCaption(e.target.value)} placeholder="e.g. Foundation pour complete" /></Field>
-                <Field label="Date"><Input value={uploadDate} onChange={(e) => setUploadDate(e.target.value)} placeholder="e.g. Mar 2025" /></Field>
+            <div className="p-8 rounded-2xl bg-background border-2 border-dashed border-border flex flex-col items-center text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-muted-foreground">
+                <ImageIcon size={24} />
               </div>
-              <button onClick={() => { haptic(); handleUpload(); }} disabled={uploading} className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[var(--vc-gold)] text-black font-sans font-semibold text-sm disabled:opacity-50">
-                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                Upload
+              <div>
+                <p className="text-sm font-semibold">Upload site media</p>
+                <p className="text-xs text-muted-foreground mt-1">Images or videos of current progress</p>
+              </div>
+              
+              <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" id="site-media-upload" onChange={() => handleUpload()} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-xl">
+                <Field label="Caption"><Input value={uploadCaption} onChange={(e) => setUploadCaption(e.target.value)} placeholder="e.g. Foundation pour complete" /></Field>
+                <Field label="Date Headline"><Input value={uploadDate} onChange={(e) => setUploadDate(e.target.value)} placeholder="e.g. Mar 2025" /></Field>
+              </div>
+              
+              <button 
+                onClick={() => document.getElementById('site-media-upload')?.click()} 
+                disabled={uploading} 
+                className="btn-vercel h-11 px-8 text-sm"
+              >
+                {uploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                {uploading ? "Uploading..." : "Select File & Upload"}
               </button>
             </div>
 
             {/* Existing updates grid */}
             {(blog?.site_updates ?? []).length > 0 && (
-              <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {blog!.site_updates.map((u, i) => (
-                  <div key={u.id ?? i} className="relative group rounded-xl overflow-hidden border border-[var(--vc-border)]">
+                  <div key={u.id ?? i} className="relative group rounded-xl overflow-hidden border border-border bg-background aspect-square">
                     {u.media_type === "image" ? (
-                      <img src={u.media_url} alt={u.caption} className="w-full aspect-video object-cover" />
+                      <img src={u.media_url} alt={u.caption} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                     ) : (
-                      <div className="relative aspect-video bg-black flex items-center justify-center">
-                        <Video size={24} className="text-white/40" />
+                      <div className="w-full h-full bg-secondary flex items-center justify-center">
+                        <Video size={32} className="text-muted-foreground/40" />
                       </div>
                     )}
-                    <div className="p-2 bg-[var(--vc-bg)]">
-                      <p className="text-xs font-sans text-[var(--vc-muted)] line-clamp-1">{u.caption || "—"}</p>
-                      {u.update_date && <p className="text-[10px] font-mono text-[var(--vc-gold)]">{u.update_date}</p>}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
+                      <p className="text-[10px] font-bold text-vastu-green uppercase tracking-widest mb-1">{u.update_date}</p>
+                      <p className="text-xs text-white line-clamp-2">{u.caption || "Untitled Update"}</p>
                     </div>
                     <button
                       onClick={() => { haptic.error(); removeUpdate(u); }}
-                      className="absolute top-2 right-2 p-1 rounded-full bg-black/70 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 p-2 rounded-full bg-black/50 text-white hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 ))}

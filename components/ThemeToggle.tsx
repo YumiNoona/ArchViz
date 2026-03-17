@@ -1,56 +1,40 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 import { Sun, Moon } from "lucide-react";
-import { haptic } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const btnRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className="w-9 h-9" />;
+
+  if (!mounted) return (
+    <div className="w-9 h-9 rounded-lg border border-border bg-secondary/50 animate-pulse" />
+  );
 
   const isDark = theme === "dark";
 
-  const toggle = () => {
-    haptic(8);
-    const goingToLight = isDark; // currently dark → going light
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      // dispatch BEFORE setTheme so we know direction correctly
-      window.dispatchEvent(
-        new CustomEvent("theme-toggle", { detail: { x, y, toLight: goingToLight } })
-      );
-    }
-    // slight delay so canvas starts before DOM changes
-    setTimeout(() => setTheme(isDark ? "light" : "dark"), 20);
-  };
-
   return (
-    <motion.button
-      ref={btnRef}
-      onClick={toggle}
-      className="relative w-9 h-9 rounded-full flex items-center justify-center border border-border hover:border-primary/50 transition-colors duration-200 overflow-hidden"
-      whileTap={{ scale: 0.85 }}
-      aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+    <button
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="relative w-9 h-9 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors flex items-center justify-center group"
+      aria-label="Toggle theme"
     >
-      <AnimatePresence mode="wait">
-        <motion.div key={isDark ? "moon" : "sun"}
-          initial={{ rotate: -180, opacity: 0, scale: 0.3 }}
-          animate={{ rotate: 0, opacity: 1, scale: 1 }}
-          exit={{ rotate: 180, opacity: 0, scale: 0.3 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={isDark ? "dark" : "light"}
+          initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+          animate={{ opacity: 1, rotate: 0, scale: 1 }}
+          exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+          transition={{ duration: 0.2, ease: "circOut" }}
+          className="text-foreground"
         >
-          {isDark
-            ? <Sun size={14} className="text-amber-400" />
-            : <Moon size={14} className="text-indigo-500" />}
+          {isDark ? <Moon size={16} /> : <Sun size={16} />}
         </motion.div>
       </AnimatePresence>
-    </motion.button>
+    </button>
   );
 }
