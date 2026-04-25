@@ -6,9 +6,9 @@ export default function Footer() {
   return (
     <footer className="py-20 border-t border-border bg-background flex items-center justify-center">
       <div className="max-w-7xl mx-auto text-center px-6">
-        <h2 className="text-2xl md:text-5xl font-medium tracking-tighter uppercase opacity-80">
+        <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] opacity-40">
           All Rights Reserved IPDS 2026
-        </h2>
+        </p>
       </div>
     </footer>
   );

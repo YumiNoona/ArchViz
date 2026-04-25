@@ -90,7 +90,7 @@ export default function Contact() {
                     Let's build
                   </motion.h2>
                 </div>
-                <div className="overflow-hidden">
+                <div className="overflow-hidden pb-4 -mb-4">
                   <motion.h2
                     initial={{ y: "110%" }}
                     animate={inView ? { y: 0 } : {}}

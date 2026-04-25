@@ -67,11 +67,7 @@ function ProjectCard({
             {project.description}
           </p>
 
-          <div className="flex items-center justify-between pt-6 border-t border-white/5">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{project.type}</span>
-            </div>
-          </div>
+
         </div>
       </div>
     </motion.div>

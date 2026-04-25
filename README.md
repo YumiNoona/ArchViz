@@ -2,174 +2,89 @@
 
 # ✦ IPDS ArchViz
 
-**A production-ready platform for hosting Unreal Engine architectural visualization experiences**
+**A premium architectural visualization hosting platform**
 
-Built with Next.js 14 · Supabase · Framer Motion · Vercel
+Built with Next.js 14 · Supabase · Framer Motion · Resend
 
-[Live Site](https://archviz-ook88r84k-veilafk.vercel.app/)
+[Live Site Demo](https://archviz-ook88r84k-veilafk.vercel.app/)
 
 </div>
 
 ---
 
-## What This Is
+## ✦ Overview
 
-IPDS ArchViz is a full-stack platform that turns Vagon Pixel Streaming URLs into a polished, client-facing architectural showcase. Projects are managed entirely through an admin panel — no code changes or redeploys needed to publish, edit, or gate a project.
+IPDS ArchViz is a high-end, production-ready platform designed for architectural studios to showcase Unreal Engine immersive experiences. It provides a seamless transition from static media to interactive cloud-based walkthroughs.
 
-Clients get a branded experience: browse projects, fill a lead form, and launch a live Unreal Engine walkthrough in a new tab. High-value projects can be locked behind a password or SMS OTP before the stream opens.
-
----
-
-## Features
-
-| Category | What's included |
-|---|---|
-| **Public site** | Hero with animated canvas background, filterable project grid, about + contact sections, dark/light mode |
-| **Project cards** | 5 hover effects (glow, tilt, tint, lift, border-trace), dual dark/light thumbnails, access type badges |
-| **Lead capture** | Visitor form (name + email + phone) before stream launch — saved to Supabase |
-| **Access control** | Per-project: Public, Password-protected, or SMS OTP |
-| **OTP delivery** | Twilio → Vonage → Resend email fallback chain |
-| **Private links** | Per-client tokenised URLs (`/p/[token]`) with optional expiry |
-| **Admin panel** | 4 tabs: Projects (CRUD + access), Visitors (analytics), Site Config (CMS), Debug (visual) |
-| **Live CMS** | All brand text, hero copy, contact details editable from admin — no redeploy |
-| **Visual builder** | 5 font stacks, 10 colour themes, 4 hero variants, 5 carousel styles, 6 cursor variants |
-| **Custom cursor** | dot-ring, magnetic, xray, ink-drop, torch, precision (desktop only) |
+The platform features a robust administrative dashboard for project management, lead tracking, and secure access control, all delivered through a premium, state-of-the-art UI/UX.
 
 ---
 
-## Tech Stack
+## ✦ Key Features
 
-- **Framework** — Next.js 14 (App Router)
-- **Language** — TypeScript
-- **Styling** — Tailwind CSS, Framer Motion
-- **Fonts** — Cormorant Garamond (display) + DM Sans (body) + DM Mono
-- **Database** — Supabase (Postgres + Storage)
-- **Email** — Resend
-- **SMS** — Twilio + Vonage (fallback)
-- **Deployment** — Vercel
-
----
-
-## Project Structure
-
-```
-IPDS/
-├── app/
-│   ├── (site)/
-│   │   ├── layout.tsx          # Site layout — fonts, providers, navbar
-│   │   ├── page.tsx            # Public homepage
-│   │   └── p/[token]/page.tsx  # Private client link pages
-│   ├── admin/
-│   │   ├── layout.tsx          # Admin layout
-│   │   └── page.tsx            # Admin dashboard / login
-│   ├── api/
-│   │   ├── admin-auth/         # POST — password validation (SHA-256)
-│   │   ├── send-email/         # POST — Resend transactional email
-│   │   └── send-otp/           # POST — Twilio → Vonage → Resend OTP
-│   └── layout.tsx              # Root layout
-├── components/
-│   ├── LaunchModal.tsx         # Visitor form + access gate (public/pw/otp)
-│   ├── ProjectGrid.tsx         # Main project list with internal ProjectCard
-│   ├── ProjectCarousel.tsx     # Mobile/featured carousel
-│   ├── Hero.tsx, Navbar.tsx, Contact.tsx, Footer.tsx
-│   └── BackgroundCanvas.tsx    # WebGL gradient mesh animation
-├── lib/
-│   └── supabase.ts             # All DB/storage functions
-├── styles/globals.css          # Tailwind base + CSS custom properties
-└── DATABASE.sql                # Full database setup SQL
-```
+- **Premium UI/UX**: Unified design system using glassmorphism, smooth Framer Motion transitions, and a curated dark/light aesthetic.
+- **Project Management**: Full CRUD capabilities for projects, including image uploads (main, dark, and light variants).
+- **Access Control**: Secure your streams with multiple access levels:
+  - **Public**: Instant access with lead capture.
+  - **Password**: Gated access for private reviews.
+  - **OTP**: Secure 6-digit code verification via Email/SMS.
+- **Lead Capture & Analytics**: Tracks every visitor and enquiry.
+  - **Overview**: Real-time traffic stats and lead distribution.
+  - **Project**: Dedicated hits tracking per experience.
+  - **Visitors**: Detailed interaction history with search and CSV export.
+  - **Enquiry**: Integrated project enquiries with 10-digit mobile validation and CSV export.
+- **Campaigns**: Send personalized project updates to your client base directly from the dashboard.
+- **Mobile Optimized**: Fully responsive experience designed to wow clients on any device.
 
 ---
 
-## Database (Supabase)
+## ✦ Technology Stack
 
-Five tables, all with RLS enabled:
-
-- **`projects`** — title, description, images (main/dark/light), stream URL, access type + password, sort order
-- **`project_links`** — per-client tokenised links with optional expiry
-- **`otp_codes`** — 6-digit codes, 10-minute expiry, single-use
-- **`visitors`** — lead capture: name, email, phone, project, timestamp
-- **`site_settings`** — JSON key/value: `site_config`, `debug_layout`, `debug_presets`
-
-Storage bucket: **`project-images`** (public CDN) — images auto-deleted when a project is deleted.
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Animations**: Framer Motion
+- **Backend**: Supabase (PostgreSQL, Realtime, Storage)
+- **Email/OTP**: Resend
+- **Haptics**: iOS-style haptic feedback integration
+- **Deployment**: Vercel
 
 ---
 
-## Access Control Flows
+## ✦ Getting Started
 
-**Public** → Name + Email + Phone → stream launches
+### 1. Database Setup
+1. Create a new project at [Supabase](https://supabase.com).
+2. Execute the provided `DATABASE.sql` in the SQL Editor to set up tables and RLS policies.
+3. Create a storage bucket named `project-images` and set it to **Public**.
 
-**Password** → Name + Email + Phone + Password → if wrong, shows "Contact Sales" popup with email + call buttons
-
-**OTP** → Name + Email + Phone + [Send Code] → 6-box SMS code entry → verified → stream launches  
-OTP delivery: Twilio SMS → Vonage SMS → Resend email (each tried if previous fails)
-
----
-
-## Environment Variables
-
+### 2. Environment Configuration
+Create a `.env.local` file with the following:
 ```env
-# Required
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-ADMIN_PASSWORD_HASH=          # SHA-256 hex of your admin password
-RESEND_API_KEY=
-
-# SMS OTP (optional — falls back to email without these)
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_PHONE_NUMBER=
-VONAGE_API_KEY=
-VONAGE_API_SECRET=
-VONAGE_SENDER_ID=
-
-# Email sender (optional — defaults to onboarding@resend.dev without custom domain)
-EMAIL_FROM=noreply@yourdomain.com
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+ADMIN_PASSWORD_HASH=sha256_hash_of_your_admin_password
+RESEND_API_KEY=your_resend_api_key
 ```
 
-
-## Setup
-
-### 1. Supabase
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Run `SCHEMA_V2.sql` in the SQL Editor
-3. Confirm the `project-images` storage bucket is set to **Public**
-
-### 2. Vercel
-
-```bash
-npm install -g vercel
-vercel --prod
-```
-
-Add all environment variables in **Vercel → Settings → Environment Variables**, then redeploy.
-
-### 3. Local dev
-
+### 3. Local Development
 ```bash
 npm install
-# create .env.local with NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY
 npm run dev
-# → http://localhost:3000
 ```
 
 ---
 
-## Customisation
+## ✦ Dashboard Sections
 
-| What | Where |
-|---|---|
-| Brand name + favicon | Admin → Site Config |
-| Hero headline + CTA text | Admin → Site Config |
-| Colour theme | Admin → Debug → Dark/Light themes |
-| Font stack | Admin → Debug → Fonts |
-| Card hover style | Admin → Site Config → Card Effect |
-| Sales contact (password error popup) | `components/LaunchModal.tsx` — `SALES_EMAIL` + `SALES_PHONE` constants |
-| Project types list | `lib/supabase.ts` — `ProjectType` union |
+The Admin Panel (`/admin`) is organized into five specialized modules:
+
+- **Overview**: Global traffic analytics and growth trends.
+- **Project**: CRUD management and visibility toggles for all ArchViz experiences.
+- **Visitors**: Searchable lead database for "Passive" interest.
+- **Enquiry**: Centralized hub for high-intent project enquiries and contact details.
+- **Campaign**: Email broadcast center for project announcements.
 
 ---
 
 <div align="center">
-<sub>IPDS ArchViz · Built with Next.js 14 + Supabase + Vercel · Made By VeilAFK (YumiNoona)</sub>
+<sub>IPDS · Professional Architectural Visualization Platform</sub>
 </div>

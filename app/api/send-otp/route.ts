@@ -38,7 +38,7 @@ async function sendViaTwilio(to: string, code: string, projectTitle: string): Pr
     console.error("Twilio error:", data);
     return false;
   }
-  console.log("OTP sent via Twilio SMS to", phone);
+
   return true;
 }
 
@@ -72,7 +72,7 @@ async function sendViaVonage(to: string, code: string, projectTitle: string): Pr
     console.error("Vonage error:", msg);
     return false;
   }
-  console.log("OTP sent via Vonage SMS to", phone);
+
   return true;
 }
 
@@ -102,7 +102,7 @@ async function sendViaResend(
         </div>
       `,
     });
-    console.log("OTP sent via Resend email to", to);
+
     return true;
   } catch (e) {
     console.error("Resend error:", e);

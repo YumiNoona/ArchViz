@@ -448,7 +448,9 @@ export default function ProjectDetail({
       </main>
 
       <footer className="py-24 border-t border-border transition-colors duration-300 text-center px-8">
-        <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground/30 transition-colors duration-300">IPDS ArchViz — {new Date().getFullYear()}</p>
+        <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] opacity-40">
+          All Rights Reserved IPDS 2026
+        </p>
       </footer>
     </motion.div>
   );
