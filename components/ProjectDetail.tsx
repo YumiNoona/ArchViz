@@ -3,7 +3,7 @@
 /**
  * ProjectDetail.tsx
  * Redesigned full-screen project story page.
- * Uses the premium Vastu Green aesthetic and consolidated JSONB schema.
+ * Uses the premium IPDS brand aesthetic and consolidated JSONB schema.
  */
 
 import { useState, useEffect, useRef } from "react";
@@ -17,9 +17,9 @@ import { getProjectBlog, type Project, type BlogSection, type SiteUpdate } from 
 
 // ─── Theme Constants ──────────────────────────────────────────────────────────
 
-const VASTU_GREEN = "#e2ffaf";
-const VASTU_GREEN_DIM = "rgba(226, 255, 175, 0.6)";
-const VASTU_GREEN_FAINT = "rgba(226, 255, 175, 0.1)";
+const BRAND_ACCENT = "#e2ffaf";
+const BRAND_ACCENT_DIM = "rgba(226, 255, 175, 0.6)";
+const BRAND_ACCENT_FAINT = "rgba(226, 255, 175, 0.1)";
 const BG = "#000000";
 const FG = "#ffffff";
 const MUTED = "rgba(255, 255, 255, 0.5)";
@@ -41,7 +41,7 @@ function HighlightedText({ text, phrases }: { text: string; phrases: string[] })
           <motion.span
             key={i}
             initial={{ color: MUTED }}
-            whileInView={{ color: VASTU_GREEN }}
+            whileInView={{ color: BRAND_ACCENT }}
             viewport={{ once: true, margin: "-10% 0%" }}
             className="italic font-medium"
           >
@@ -75,8 +75,8 @@ function AnimatedParagraph({ text, phrases, delay = 0 }: { text: string; phrases
 function Label({ children, icon: Icon }: { children: React.ReactNode; icon?: any }) {
   return (
     <div className="flex items-center gap-2 mb-4">
-      {Icon && <Icon size={12} className="text-vastu-green" />}
-      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-vastu-green/60">
+      {Icon && <Icon size={12} className="text-brand-accent" />}
+      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-accent/60">
         {children}
       </span>
     </div>
@@ -158,10 +158,10 @@ function Gallery({ media }: { media: SiteUpdate[] }) {
         
         {media.length > 1 && (
           <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={() => setActive(i => (i - 1 + media.length) % media.length)} className="p-3 rounded-full bg-background/60 backdrop-blur-md border border-border text-foreground hover:bg-vastu-green hover:text-black transition-all">
+            <button onClick={() => setActive(i => (i - 1 + media.length) % media.length)} className="p-3 rounded-full bg-background/60 backdrop-blur-md border border-border text-foreground hover:bg-brand-accent hover:text-black transition-all">
               <ChevronLeft size={16} />
             </button>
-            <button onClick={() => setActive(i => (i + 1) % media.length)} className="p-3 rounded-full bg-background/60 backdrop-blur-md border border-border text-foreground hover:bg-vastu-green hover:text-black transition-all">
+            <button onClick={() => setActive(i => (i + 1) % media.length)} className="p-3 rounded-full bg-background/60 backdrop-blur-md border border-border text-foreground hover:bg-brand-accent hover:text-black transition-all">
               <ChevronRight size={16} />
             </button>
           </div>
@@ -169,7 +169,7 @@ function Gallery({ media }: { media: SiteUpdate[] }) {
 
         {media[active]?.media_type === 'image' && (
           <div className="absolute bottom-6 right-6 p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 opacity-60 group-hover:opacity-100 transition-opacity pointer-events-none">
-            <ZoomIn size={16} className="text-vastu-green" />
+            <ZoomIn size={16} className="text-brand-accent" />
           </div>
         )}
       </div>
@@ -181,7 +181,7 @@ function Gallery({ media }: { media: SiteUpdate[] }) {
               key={i}
               onClick={() => setActive(i)}
               className={`relative flex-shrink-0 w-24 h-14 rounded-xl overflow-hidden border-2 transition-all ${
-                i === active ? "border-vastu-green scale-105" : "border-transparent opacity-40 hover:opacity-100"
+                i === active ? "border-brand-accent scale-105" : "border-transparent opacity-40 hover:opacity-100"
               }`}
             >
               <div className="absolute inset-0 pointer-events-none">
@@ -227,7 +227,7 @@ function Gallery({ media }: { media: SiteUpdate[] }) {
                   {renderMedia(media[active])}
               </motion.div>
             )}
-            <button className="absolute top-8 right-8 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-vastu-green transition-colors">Close (Esc)</button>
+            <button className="absolute top-8 right-8 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-brand-accent transition-colors">Close (Esc)</button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -252,7 +252,7 @@ export default function ProjectDetail({
 }) {
   const [data, setData] = useState<Project | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [heroTheme, setHeroTheme] = useState<"main" | "dark" | "light">("main");
+  const [heroTheme, setHeroTheme] = useState<"dark" | "light">("dark");
 
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], ["0%", "40%"]);
@@ -268,12 +268,13 @@ export default function ProjectDetail({
   useEffect(() => {
     window.scrollTo(0, 0);
     getProjectBlog(project.id).then(setData);
+    // Sync with dark mode by default
+    setTheme("dark");
   }, [project.id]);
 
   const p = data || project; // Fallback to provided project while loading detailed data
 
   const specs = [
-    { label: "Type", value: p.type },
     { label: "Location", value: p.location },
     { label: "Year", value: p.year },
   ];
@@ -284,7 +285,7 @@ export default function ProjectDetail({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="bg-background text-foreground min-h-screen selection:bg-vastu-green selection:text-black transition-colors duration-300 ease-in-out"
+      className="bg-background text-foreground min-h-screen selection:bg-brand-accent selection:text-black transition-colors duration-300 ease-in-out"
     >
       {/* ── Navbar ── */}
       <nav className="fixed top-0 inset-x-0 z-50 py-4 px-6 md:px-12 bg-background/40 backdrop-blur-xl border-b border-border transition-colors duration-300">
@@ -292,7 +293,7 @@ export default function ProjectDetail({
           {hideBackButton ? (
             <div />
           ) : (
-            <button onClick={onBack} className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-vastu-green transition-colors">
+            <button onClick={onBack} className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-brand-accent transition-colors">
               <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
               Back to Projects
             </button>
@@ -300,13 +301,13 @@ export default function ProjectDetail({
           
           <div className="flex items-center gap-6">
             {p.has_live_updates && p.gallery_updates?.length > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-vastu-green/10 border border-vastu-green/20">
-                <div className="w-1.5 h-1.5 rounded-full bg-vastu-green animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-vastu-green">Gallery</span>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-brand-accent/10 border border-brand-accent/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-accent">Gallery</span>
               </div>
             )}
             <span className="hidden md:inline text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-colors duration-300">
-              {p.type} — {p.year}
+              {p.year}
             </span>
           </div>
         </div>
@@ -340,7 +341,7 @@ export default function ProjectDetail({
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="space-y-6"
           >
-            <div className="flex items-center gap-3 text-vastu-green">
+            <div className="flex items-center gap-3 text-brand-accent">
               <MapPin size={14} />
               <span className="text-xs font-bold uppercase tracking-[0.3em]">{p.location}</span>
             </div>
@@ -362,7 +363,7 @@ export default function ProjectDetail({
         {/* Theme Toggle */}
         {(p.image_url_dark || p.image_url_light) && (
           <div className="absolute bottom-10 right-8 md:right-12 z-20 flex gap-2 p-1.5 rounded-full bg-background/40 backdrop-blur-md border border-border transition-colors duration-300">
-            <button onClick={() => switchTheme("light")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${heroTheme === "light" || heroTheme === "main" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>Light Mode</button>
+            <button onClick={() => switchTheme("light")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${heroTheme === "light" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>Light Mode</button>
             <button onClick={() => switchTheme("dark")} className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${heroTheme === "dark" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}>Dark Mode</button>
           </div>
         )}
@@ -420,7 +421,7 @@ export default function ProjectDetail({
                  <div className="grid gap-6">
                     {specs.map(spec => (
                       <div key={spec.label} className="group border-b border-border transition-colors duration-300 pb-4 last:border-0">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-vastu-green transition-colors">{spec.label}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-brand-accent transition-colors">{spec.label}</p>
                         <p className="text-sm text-foreground/80 font-light mt-1 transition-colors duration-300">{spec.value}</p>
                       </div>
                     ))}
@@ -431,7 +432,7 @@ export default function ProjectDetail({
               {p.stream_url && (
                 <button
                   onClick={() => onLaunch(p)}
-                  className="w-full h-16 rounded-2xl bg-foreground text-background font-bold uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-vastu-green hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-vastu-green/20"
+                  className="w-full h-16 rounded-2xl bg-foreground text-background font-bold uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-brand-accent hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-brand-accent/20"
                 >
                   <Play size={14} fill="currentColor" />
                   Launch Experience

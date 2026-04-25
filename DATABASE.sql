@@ -3,32 +3,14 @@
 -- ⚠️ WARNING: THIS WILL DELETE ALL EXISTING DATA AND IMAGES ⚠️
 -- ================================================================
 
--- 1. DROP ALL EXISTING TABLES
+-- 1. RESET
 DROP TABLE IF EXISTS project_auth CASCADE;
 DROP TABLE IF EXISTS visitors CASCADE;
+DROP TABLE IF EXISTS enquiries CASCADE;
 DROP TABLE IF EXISTS site_config CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 
--- 2. STORAGE CLEANUP (MANUAL)
--- Note: Supabase restricts direct SQL deletion from storage tables to prevent data loss.
--- To completely clear old images, please go to the "Storage" tab in your Supabase Dashboard,
--- and manually empty the 'project-images' and 'site-updates' buckets before proceeding.
-
--- ================================================================
--- RECREATE TABLES
--- ================================================================
-
-CREATE TABLE site_config (
-  key TEXT PRIMARY KEY,
-  value JSONB NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE site_config ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public read config" ON site_config FOR SELECT USING (true);
-CREATE POLICY "Admin write config" ON site_config FOR ALL USING (true) WITH CHECK (true);
-
-
+-- 2. PROJECTS
 CREATE TABLE projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
@@ -51,14 +33,18 @@ CREATE TABLE projects (
   gallery_updates JSONB DEFAULT '[]'::jsonb,
   story TEXT,
   has_live_updates BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read projects" ON projects FOR SELECT USING (true);
-CREATE POLICY "Admin write projects" ON projects FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Admin manage projects" ON projects FOR ALL USING (auth.role() = 'anon');
 
+CREATE INDEX idx_projects_status ON projects(status);
+CREATE INDEX idx_projects_featured ON projects(featured);
 
+-- 3. VISITORS
 CREATE TABLE visitors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -71,35 +57,43 @@ CREATE TABLE visitors (
 );
 
 ALTER TABLE visitors ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public write visitors" ON visitors FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admin read visitors" ON visitors FOR SELECT USING (true);
+CREATE POLICY "Public write visitors" ON visitors FOR INSERT WITH CHECK (auth.role() = 'anon');
+CREATE POLICY "Admin read visitors" ON visitors FOR SELECT USING (auth.role() = 'anon');
 
+CREATE INDEX idx_visitors_project_id ON visitors(project_id);
 
+-- 4. ENQUIRIES
+CREATE TABLE enquiries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  project TEXT,
+  message TEXT NOT NULL,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE enquiries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public write enquiries" ON enquiries FOR INSERT WITH CHECK (auth.role() = 'anon');
+CREATE POLICY "Admin read enquiries" ON enquiries FOR SELECT USING (auth.role() = 'anon');
+CREATE POLICY "Admin delete enquiries" ON enquiries FOR DELETE USING (auth.role() = 'anon');
+
+-- 5. PROJECT AUTH
 CREATE TABLE project_auth (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
   email TEXT,
-  code TEXT,
-  token TEXT UNIQUE,
+  token TEXT UNIQUE NOT NULL,
   expires_at TIMESTAMPTZ,
   used BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE project_auth ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public read/write auth" ON project_auth FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public read/write auth" ON project_auth FOR ALL USING (auth.role() = 'anon');
 
-
--- 3. SEED INITIAL CONFIG
-INSERT INTO site_config (key, value) VALUES 
-('global_settings', '{"site_name": "IPDS", "admin_email": "admin@ipds.com"}'::jsonb);
-
-
--- ================================================================
--- RECREATE BUCKETS & FIXED POLICIES
--- ================================================================
-
--- Recreate buckets explicitly checking for public access
+-- 6. STORAGE
+-- Recreate buckets
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('project-images', 'project-images', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
@@ -108,17 +102,21 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('site-updates', 'site-updates', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- The missing key for storage policies when uploading from a client API anonymously
--- is that you need ALL operations (SELECT, INSERT, UPDATE, DELETE) uniquely permitted.
-
--- Project Images 
+-- Storage Policies
+DROP POLICY IF EXISTS "Public Access project-images read" ON storage.objects;
+DROP POLICY IF EXISTS "Public Access project-images insert" ON storage.objects;
+DROP POLICY IF EXISTS "Public Access project-images update" ON storage.objects;
+DROP POLICY IF EXISTS "Public Access project-images delete" ON storage.objects;
 CREATE POLICY "Public Access project-images read" ON storage.objects FOR SELECT USING (bucket_id = 'project-images');
-CREATE POLICY "Public Access project-images insert" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'project-images');
-CREATE POLICY "Public Access project-images update" ON storage.objects FOR UPDATE USING (bucket_id = 'project-images');
-CREATE POLICY "Public Access project-images delete" ON storage.objects FOR DELETE USING (bucket_id = 'project-images');
+CREATE POLICY "Public Access project-images insert" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'project-images' AND auth.role() = 'anon');
+CREATE POLICY "Public Access project-images update" ON storage.objects FOR UPDATE USING (bucket_id = 'project-images' AND auth.role() = 'anon');
+CREATE POLICY "Public Access project-images delete" ON storage.objects FOR DELETE USING (bucket_id = 'project-images' AND auth.role() = 'anon');
 
--- Site Updates 
+DROP POLICY IF EXISTS "Public Access site-updates read" ON storage.objects;
+DROP POLICY IF EXISTS "Public Access site-updates insert" ON storage.objects;
+DROP POLICY IF EXISTS "Public Access site-updates update" ON storage.objects;
+DROP POLICY IF EXISTS "Public Access site-updates delete" ON storage.objects;
 CREATE POLICY "Public Access site-updates read" ON storage.objects FOR SELECT USING (bucket_id = 'site-updates');
-CREATE POLICY "Public Access site-updates insert" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'site-updates');
-CREATE POLICY "Public Access site-updates update" ON storage.objects FOR UPDATE USING (bucket_id = 'site-updates');
-CREATE POLICY "Public Access site-updates delete" ON storage.objects FOR DELETE USING (bucket_id = 'site-updates');
+CREATE POLICY "Public Access site-updates insert" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'site-updates' AND auth.role() = 'anon');
+CREATE POLICY "Public Access site-updates update" ON storage.objects FOR UPDATE USING (bucket_id = 'site-updates' AND auth.role() = 'anon');
+CREATE POLICY "Public Access site-updates delete" ON storage.objects FOR DELETE USING (bucket_id = 'site-updates' AND auth.role() = 'anon');

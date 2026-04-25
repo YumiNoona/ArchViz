@@ -64,7 +64,7 @@ function Loader() {
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "hsl(240 15% 6%)" }}>
       <div className="w-8 h-8 border-2 rounded-full animate-spin"
-        style={{ borderColor: "hsl(258 78% 70%/0.2)", borderTopColor: "hsl(258 78% 70%)" }} />
+        style={{ borderColor: "hsl(79 100% 84%/0.2)", borderTopColor: "hsl(79 100% 84%)" }} />
     </div>
   );
 }

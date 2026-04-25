@@ -8,7 +8,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       attribute="class" 
       defaultTheme="dark" 
       enableSystem={false} 
-      storageKey="vastu-site-theme"
+      storageKey="ipds-site-theme"
       disableTransitionOnChange={false}
     >
       {children}

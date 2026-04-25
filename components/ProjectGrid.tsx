@@ -6,9 +6,7 @@ import { ArrowUpRight, MapPin, LayoutGrid, Rows3, Filter } from "lucide-react";
 import { getActiveProjects, Project, ProjectType } from "@/lib/supabase";
 import ProjectCarousel, { CarouselStyle } from "./ProjectCarousel";
 
-const FILTERS: Array<ProjectType | "All"> = [
-  "All", "Residential", "Commercial", "Mixed-Use", "Hospitality", "Cultural",
-];
+
 
 function ProjectCard({
   project,
@@ -34,59 +32,44 @@ function ProjectCard({
       className="group cursor-pointer"
       onClick={() => onExplore(project)}
     >
-      <div className="relative overflow-hidden bg-secondary/30 h-full flex flex-col rounded-[2.5rem] border border-white/5 group-hover:border-vastu-green/20 group-hover:bg-secondary/50 transition-all duration-500 shadow-2xl group-hover:shadow-vastu-green/5">
-        {/* Image Container */}
-        <div className="relative aspect-[16/10] overflow-hidden">
+      <div className="relative overflow-hidden bg-secondary/30 h-full flex flex-col rounded-[2.5rem] border border-white/5 group-hover:border-brand-accent/20 group-hover:bg-secondary/50 transition-all duration-500 shadow-2xl group-hover:shadow-brand-accent/5">
+        <div className="relative h-64 overflow-hidden">
           <motion.img
             src={project.image_url}
             alt={project.title}
-            loading="lazy"
-            animate={{ scale: hovered ? 1.05 : 1 }}
-            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
             className="w-full h-full object-cover"
+            animate={{ scale: hovered ? 1.05 : 1 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
           
-          {/* Featured Badge */}
-          {project.featured && (
-            <div className="absolute top-6 left-6">
-              <span className="px-3 py-1 rounded-full bg-vastu-green/20 border border-vastu-green/30 text-vastu-green text-[10px] font-bold uppercase tracking-widest backdrop-blur-md">
-                Featured
-              </span>
-            </div>
-          )}
+
         </div>
 
-        {/* Content */}
-        <div className="p-8 flex flex-col flex-grow">
-          <div className="flex items-start justify-between mb-3">
-            <h3 className={`text-2xl font-medium tracking-tight transition-colors ${hovered ? "text-vastu-green" : "text-foreground"}`}>
+        <div className="p-8 flex-1 flex flex-col">
+          <div className="flex items-start justify-between mb-4">
+            <h3 className={`text-2xl font-medium tracking-tight transition-colors ${hovered ? "text-brand-accent" : "text-foreground"}`}>
               {project.title}
             </h3>
-            <div className={`p-2 rounded-full border transition-all duration-500 ${hovered ? "border-vastu-green/50 text-vastu-green translate-x-1 -translate-y-1" : "border-white/10 text-muted-foreground"}`}>
+            <div className={`p-2 rounded-full border transition-all duration-500 ${hovered ? "border-brand-accent/50 text-brand-accent translate-x-1 -translate-y-1" : "border-white/10 text-muted-foreground"}`}>
               <ArrowUpRight size={18} />
             </div>
           </div>
           
-          <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium mb-5">
-            <span className="flex items-center gap-1.5">
-              <MapPin size={12} className="opacity-50" />
-              {project.location}
-            </span>
-            <span className="w-1 h-1 rounded-full bg-border" />
-            <span className="uppercase tracking-widest text-[10px] opacity-70">{project.type}</span>
+          <div className="flex items-center gap-2 mb-6">
+            <MapPin size={14} className="text-muted-foreground" />
+            <span className="text-xs text-muted-foreground font-light">{project.location}</span>
+            <span className="mx-2 w-1 h-1 rounded-full bg-border" />
+            <span className="text-xs text-muted-foreground font-light">{project.year}</span>
           </div>
 
-          <p className="text-sm text-muted-foreground line-clamp-3 font-light leading-relaxed mb-8 opacity-80 group-hover:opacity-100 transition-opacity">
-            {project.description || "Experimental architectural visualization exploring new paradigms of space and light."}
+          <p className="text-sm text-muted-foreground/80 line-clamp-2 font-light leading-relaxed mb-8 flex-1">
+            {project.description}
           </p>
 
-          <div className="mt-auto flex items-center justify-between">
+          <div className="flex items-center justify-between pt-6 border-t border-white/5">
             <div className="flex items-center gap-2">
-              <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${hovered ? "bg-vastu-green animate-pulse" : "bg-white/20"}`} />
-              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50">
-                Project {project.year}
-              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">{project.type}</span>
             </div>
           </div>
         </div>
@@ -98,7 +81,6 @@ function ProjectCard({
 export default function ProjectGrid({ onSelectProject }: { onSelectProject: (p: Project) => void }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<ProjectType | "All">("All");
   const [view, setView] = useState<"carousel" | "grid">("grid"); // Default to grid for Vercel feel
   const carouselStyle = "dynamic";
 
@@ -106,7 +88,7 @@ export default function ProjectGrid({ onSelectProject }: { onSelectProject: (p: 
     getActiveProjects().then(d => { setProjects(d); setLoading(false); });
   }, []);
 
-  const filtered = filter === "All" ? projects : projects.filter(p => p.type === filter);
+  const filtered = projects;
   const handleExplore = (p: Project) => { onSelectProject(p); };
 
   return (
@@ -123,7 +105,7 @@ export default function ProjectGrid({ onSelectProject }: { onSelectProject: (p: 
               A curated selection of our most groundbreaking architectural visualizations.
             </p>
           </div>
-
+ 
           {/* Controls */}
           <div className="flex flex-col items-end gap-4">
             <div className="flex items-center gap-2 p-1 bg-secondary border border-border rounded-lg">
@@ -140,23 +122,6 @@ export default function ProjectGrid({ onSelectProject }: { onSelectProject: (p: 
                 <Rows3 size={16} />
               </button>
             </div>
-            
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0">
-              <Filter size={14} className="text-muted-foreground shrink-0" />
-              {FILTERS.map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-                    filter === f 
-                    ? "bg-foreground text-background" 
-                    : "bg-secondary text-muted-foreground hover:text-foreground border border-border"
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -169,7 +134,7 @@ export default function ProjectGrid({ onSelectProject }: { onSelectProject: (p: 
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-32 border border-dashed border-border rounded-2xl">
-            <p className="text-muted-foreground">No projects found for the selected category.</p>
+            <p className="text-muted-foreground">No projects found.</p>
           </div>
         ) : (
           <AnimatePresence mode="wait">

@@ -37,7 +37,15 @@ function ExploreBtn({ project, onExplore }: { project: Project; onExplore?: (p: 
 function Fan3DCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p: Project) => void }) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const autoRef = useRef<ReturnType<typeof setInterval>>();
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const goto = useCallback((idx: number) => {
     setActive(wrap(idx, projects.length));
@@ -50,6 +58,14 @@ function Fan3DCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
   }, [paused, projects.length]);
 
   const getPos = (offset: number) => {
+    if (isMobile) {
+      const mobilePos: Record<number, any> = {
+        [-1]: { x: -160, z: -100, ry: 20, scale: 0.8, opacity: 0.4, zIndex: 1 },
+        [0]:  { x: 0,    z: 0,    ry: 0,  scale: 1.0, opacity: 1.0, zIndex: 10 },
+        [1]:  { x: 160,  z: -100, ry: -20,scale: 0.8, opacity: 0.4, zIndex: 1 },
+      };
+      return mobilePos[offset] ?? { x: 0, z: -200, ry: 0, scale: 0.5, opacity: 0, zIndex: 0 };
+    }
     const positions: Record<number, { x: number; z: number; ry: number; scale: number; opacity: number; zIndex: number }> = {
       [-2]: { x: -340, z: -180, ry: 40, scale: 0.7, opacity: 0.2, zIndex: 0 },
       [-1]: { x: -220, z: -90,  ry: 25, scale: 0.85, opacity: 0.6, zIndex: 1 },
@@ -61,18 +77,20 @@ function Fan3DCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
   };
 
   return (
-    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      <div className="relative flex items-center justify-center h-[520px]" style={{ perspective: 1200 }}>
+    <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="overflow-hidden">
+      <div className="relative flex items-center justify-center h-[600px] py-10" style={{ perspective: 1200 }}>
         {projects.map((p, i) => {
           const offset = wrap(i - active, projects.length);
           const norm = offset > projects.length / 2 ? offset - projects.length : offset;
-          if (Math.abs(norm) > 2) return null;
+          const limit = isMobile ? 1 : 2;
+          if (Math.abs(norm) > limit) return null;
           const pos = getPos(norm);
           const isActive = norm === 0;
 
           return (
             <motion.div
               key={p.id}
+              layout
               animate={{
                 x: pos.x,
                 z: pos.z,
@@ -81,35 +99,35 @@ function Fan3DCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
                 opacity: pos.opacity,
               }}
               transition={{
-                type: "spring",
-                stiffness: 180,
-                damping: 30,
+                duration: 0.8,
+                ease: [0.16, 1, 0.3, 1]
               }}
-              className="absolute w-[320px] cursor-pointer"
+              className="absolute cursor-pointer"
               style={{
+                width: isMobile ? "280px" : "340px",
                 zIndex: pos.zIndex,
                 transformStyle: "preserve-3d",
               }}
               onClick={() => !isActive && goto(i)}
             >
-              <div className={`bevel-card overflow-hidden bg-secondary/80 backdrop-blur-xl ${isActive ? "border-vastu-green/20" : ""}`}>
-                {/* Image */}
-                <div className="relative aspect-[16/10] overflow-hidden">
-                  <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-80" />
+              <div className={`bevel-card rounded-[2.5rem] bg-secondary/80 backdrop-blur-xl transition-all duration-500 ${isActive ? "border-brand-accent/40 shadow-2xl shadow-brand-accent/10 scale-105" : "grayscale-[40%] opacity-50"}`}>
+                {/* Image Container */}
+                <div className="relative aspect-[16/10] overflow-hidden rounded-[2.5rem]">
+                  <img src={p.image_url} alt={p.title} className="w-full h-full object-cover transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-90" />
                   
                   {p.featured && (
-                    <div className="absolute top-4 left-4">
-                      <span className="px-2 py-0.5 rounded-full bg-vastu-green/20 border border-vastu-green/30 text-vastu-green text-[10px] uppercase font-bold tracking-widest backdrop-blur-md">
+                    <div className="absolute top-6 left-6">
+                      <span className="px-3 py-1 rounded-full bg-brand-accent/20 border border-brand-accent/30 text-brand-accent text-[10px] uppercase font-bold tracking-widest backdrop-blur-md">
                         Featured
                       </span>
                     </div>
                   )}
 
-                  <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <p className="text-xl font-medium tracking-tight mb-1">{p.title}</p>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-widest font-medium">
-                      <MapPin size={10} className="text-vastu-green" />{p.location}
+                  <div className="absolute bottom-0 left-0 right-0 p-8">
+                    <p className="text-2xl font-medium tracking-tight mb-1">{p.title}</p>
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-70">
+                      <MapPin size={10} className="text-brand-accent" />{p.location}
                     </div>
                   </div>
                 </div>
@@ -121,13 +139,15 @@ function Fan3DCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                      className="p-5 border-t border-border bg-background/50"
+                      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
                     >
-                      <p className="text-sm text-muted-foreground mb-5 line-clamp-2 leading-relaxed">
-                        {p.description}
-                      </p>
-                      <ExploreBtn project={p} onExplore={onExplore} />
+                      <div className="p-8 pt-2 border-t border-border/50 bg-background/50">
+                        <p className="text-sm text-muted-foreground mb-6 line-clamp-2 leading-relaxed font-light">
+                          {p.description}
+                        </p>
+                        <ExploreBtn project={p} onExplore={onExplore} />
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -146,12 +166,12 @@ function Fan3DCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
           <ChevronLeft size={20} />
         </button>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 max-w-[200px] overflow-hidden">
           {projects.map((_, i) => (
             <button
               key={i}
               onClick={() => goto(i)}
-              className={`h-1.5 rounded-full transition-all duration-500 ${i === active ? "w-8 bg-vastu-green" : "w-1.5 bg-border hover:bg-muted-foreground/30"}`}
+              className={`h-1.5 rounded-full shrink-0 transition-all duration-500 ${i === active ? "w-8 bg-brand-accent" : "w-1.5 bg-border hover:bg-muted-foreground/30"}`}
             />
           ))}
         </div>
@@ -174,7 +194,7 @@ function RevealCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (
   const p = projects[active];
 
   return (
-    <div className="relative aspect-[21/9] rounded-2xl overflow-hidden border border-border bg-secondary/20">
+    <div className="relative aspect-video md:aspect-[21/9] rounded-[2.5rem] overflow-hidden border border-border bg-secondary/20">
       <AnimatePresence mode="wait">
         <motion.img 
           key={p.id} 
@@ -183,7 +203,7 @@ function RevealCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (
           initial={{ opacity: 0, scale: 1.05 }} 
           animate={{ opacity: 1, scale: 1 }} 
           exit={{ opacity: 0 }} 
-          transition={{ duration: 0.8 }} 
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} 
           className="absolute inset-0 w-full h-full object-cover" 
         />
       </AnimatePresence>
@@ -196,20 +216,20 @@ function RevealCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (
           animate={{ opacity: 1, x: 0 }} 
           exit={{ opacity: 0, x: 20 }} 
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} 
-          className="absolute inset-0 flex flex-col justify-center px-12 max-w-lg"
+          className="absolute inset-0 flex flex-col justify-center px-6 md:px-12 max-w-lg"
         >
-          <p className="text-[10px] uppercase tracking-widest font-bold text-vastu-green mb-3">{p.type} · {p.year}</p>
-          <h2 className="text-5xl font-medium tracking-tight text-foreground mb-4">{p.title}</h2>
-          <p className="text-muted-foreground mb-8 text-lg font-light leading-relaxed line-clamp-2">{p.description}</p>
-          <div className="w-56">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-brand-accent mb-3">{p.year}</p>
+          <h2 className="text-3xl md:text-5xl font-medium tracking-tight text-foreground mb-4">{p.title}</h2>
+          <p className="text-muted-foreground mb-8 text-base md:text-lg font-light leading-relaxed line-clamp-2">{p.description}</p>
+          <div className="w-full md:w-56">
             <ExploreBtn project={p} onExplore={onExplore} />
           </div>
         </motion.div>
       </AnimatePresence>
 
-      <div className="absolute top-1/2 -translate-y-1/2 right-8 flex flex-col gap-3">
-        <button onClick={() => setActive(wrap(active - 1, projects.length))} className="p-3 rounded-full bg-background/50 border border-white/10 backdrop-blur-md text-white/50 hover:text-white transition-colors"><ChevronLeft size={20} /></button>
-        <button onClick={() => setActive(wrap(active + 1, projects.length))} className="p-3 rounded-full bg-background/50 border border-white/10 backdrop-blur-md text-white/50 hover:text-white transition-colors"><ChevronRight size={20} /></button>
+      <div className="absolute bottom-6 md:top-1/2 md:-translate-y-1/2 right-6 md:right-8 flex md:flex-col gap-3">
+        <button onClick={() => setActive(wrap(active - 1, projects.length))} className="p-2.5 md:p-3 rounded-full bg-background/50 border border-white/10 backdrop-blur-md text-white/50 hover:text-white transition-colors"><ChevronLeft size={18} /></button>
+        <button onClick={() => setActive(wrap(active + 1, projects.length))} className="p-2.5 md:p-3 rounded-full bg-background/50 border border-white/10 backdrop-blur-md text-white/50 hover:text-white transition-colors"><ChevronRight size={18} /></button>
       </div>
     </div>
   );
@@ -238,8 +258,8 @@ function StackCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
                 opacity: 1 - offset * 0.3,
                 filter: `blur(${offset * 1}px)`
               }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0 rounded-2xl overflow-hidden bevel-card bg-secondary/80 cursor-pointer origin-bottom"
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 rounded-[2.5rem] overflow-hidden bevel-card bg-secondary/80 cursor-pointer origin-bottom shadow-2xl"
               style={{ zIndex: projects.length - offset }}
               onClick={next}
             >
@@ -248,7 +268,7 @@ function StackCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
                 <div className="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-background via-transparent to-transparent">
                   <div className="mb-4">
                     <p className="text-2xl font-medium tracking-tight text-white mb-1">{proj.title}</p>
-                    <p className="text-xs text-vastu-green uppercase tracking-widest font-bold">{proj.location}</p>
+                    <p className="text-xs text-brand-accent uppercase tracking-widest font-bold">{proj.location}</p>
                   </div>
                   <ExploreBtn project={proj} onExplore={onExplore} />
                 </div>
@@ -284,18 +304,19 @@ function FilmstripCarousel({ projects, onExplore }: CarouselProps & { onExplore?
           <motion.div
             key={proj.id}
             animate={{ 
-              scale: i === active ? 1 : 0.9, 
+              scale: i === active ? 1 : 0.92, 
               opacity: i === active ? 1 : 0.4 
             }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             onClick={() => setActive(i)}
-            className={`w-[450px] shrink-0 rounded-2xl overflow-hidden bevel-card transition-all duration-500 cursor-pointer ${i === active ? "ring-2 ring-vastu-green/20" : ""}`}
+            className={`w-[280px] md:w-[450px] shrink-0 rounded-[2.5rem] overflow-hidden bevel-card transition-all duration-700 cursor-pointer ${i === active ? "ring-2 ring-brand-accent/20 shadow-2xl shadow-brand-accent/5" : ""}`}
           >
             <div className="aspect-video relative">
               <img src={proj.image_url} alt={proj.title} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
               <div className="absolute bottom-6 left-6">
                 <h3 className="text-2xl font-medium tracking-tight text-white">{proj.title}</h3>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">{proj.type}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">{proj.year}</p>
               </div>
             </div>
             {i === active && (
@@ -316,7 +337,7 @@ function FilmstripCarousel({ projects, onExplore }: CarouselProps & { onExplore?
           <button 
             key={i} 
             onClick={() => setActive(i)} 
-            className={`h-1.5 rounded-full transition-all duration-500 ${i === active ? "w-8 bg-vastu-green" : "w-1.5 bg-border hover:bg-muted-foreground/30"}`}
+            className={`h-1.5 rounded-full transition-all duration-500 ${i === active ? "w-8 bg-brand-accent" : "w-1.5 bg-border hover:bg-muted-foreground/30"}`}
           />
         ))}
       </div>

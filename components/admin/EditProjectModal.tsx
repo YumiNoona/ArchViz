@@ -175,7 +175,7 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-5xl h-full max-h-[90vh] bg-background border border-border shadow-2xl rounded-[2.5rem] flex flex-col overflow-hidden"
+        className="relative w-full max-w-5xl h-full max-h-[90vh] premium-card flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="px-8 py-6 border-b border-border flex items-center justify-between">
@@ -220,51 +220,41 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Project Title</label>
-                    <input value={title} onChange={e => setTitle(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-sm outline-none focus:ring-1 focus:ring-vastu-green/20" />
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Project Title</label>
+                    <input value={title} onChange={e => setTitle(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/30 border border-border text-sm outline-none focus:border-brand-accent/40 transition-all" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Location</label>
-                    <input value={location} onChange={e => setLocation(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-sm outline-none focus:ring-1 focus:ring-vastu-green/20" />
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Location</label>
+                    <input value={location} onChange={e => setLocation(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/30 border border-border text-sm outline-none focus:border-brand-accent/40 transition-all" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Short Description</label>
-                  <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-sm outline-none focus:ring-1 focus:ring-vastu-green/20 resize-none" />
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Short Description</label>
+                  <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full px-5 py-3 rounded-2xl bg-secondary/30 border border-border text-sm outline-none focus:border-brand-accent/40 transition-all resize-none" />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Stream URL (Pixel Streaming)</label>
-                    <input value={streamUrl} onChange={e => setStreamUrl(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-sm outline-none focus:ring-1 focus:ring-vastu-green/20" />
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Stream URL (Pixel Streaming)</label>
+                    <input value={streamUrl} onChange={e => setStreamUrl(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/30 border border-border text-sm outline-none focus:border-brand-accent/40 transition-all" />
                   </div>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-2 lg:col-span-1">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Type</label>
-                      <select value={type} onChange={e => setType(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-xs outline-none">
-                        <option>Residential</option>
-                        <option>Commercial</option>
-                        <option>Mixed-Use</option>
-                        <option>Hospitality</option>
-                        <option>Cultural</option>
-                      </select>
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Year</label>
+                      <input value={year} onChange={e => setYear(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/30 border border-border text-xs outline-none" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Year</label>
-                      <input value={year} onChange={e => setYear(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-xs outline-none" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Access</label>
-                      <select value={accessType} onChange={e => setAccessType(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-xs outline-none">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Access</label>
+                      <select value={accessType} onChange={e => setAccessType(e.target.value)} className="w-full px-5 py-3 rounded-2xl bg-secondary/30 border border-border text-xs outline-none">
                         <option value="public">Public</option>
                         <option value="password">Password</option>
                         <option value="otp">OTP Code</option>
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Password</label>
-                      <input value={accessPassword} onChange={e => setAccessPassword(e.target.value)} disabled={accessType !== "password"} placeholder="••••••" className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-xs outline-none disabled:opacity-30" />
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Password</label>
+                      <input value={accessPassword} onChange={e => setAccessPassword(e.target.value)} disabled={accessType !== "password"} placeholder="••••••" className="w-full px-5 py-3 rounded-2xl bg-secondary/30 border border-border text-xs outline-none disabled:opacity-30" />
                     </div>
                   </div>
                 </div>
@@ -332,12 +322,12 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
               >
                 <section className="space-y-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-vastu-green"><BookOpen size={18} /></div>
+                    <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-brand-accent"><BookOpen size={18} /></div>
                     <h3 className="text-lg font-medium tracking-tight">Project Story Overview</h3>
                   </div>
-                  <textarea value={story} onChange={e => setStory(e.target.value)} rows={6} className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-sm outline-none focus:ring-1 focus:ring-vastu-green/20 resize-none font-light leading-relaxed" placeholder="Write the narrative for this project..." />
+                  <textarea value={story} onChange={e => setStory(e.target.value)} rows={6} className="w-full px-5 py-3 rounded-2xl bg-secondary/50 border border-border text-sm outline-none focus:ring-1 focus:ring-brand-accent/20 resize-none font-light leading-relaxed" placeholder="Write the narrative for this project..." />
                   <div className="flex items-center justify-between">
-                    <button onClick={() => setHasLiveUpdates(!hasLiveUpdates)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all ${hasLiveUpdates ? "border-vastu-green/30 bg-vastu-green/5 text-vastu-green" : "border-border text-muted-foreground"}`}><span className={`w-1.5 h-1.5 rounded-full ${hasLiveUpdates ? "bg-vastu-green animate-pulse" : "bg-muted-foreground/30"}`} />{hasLiveUpdates ? "Gallery Enabled" : "Gallery Disabled"}</button>
+                    <button onClick={() => setHasLiveUpdates(!hasLiveUpdates)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all ${hasLiveUpdates ? "border-brand-accent/30 bg-brand-accent/5 text-brand-accent" : "border-border text-muted-foreground"}`}><span className={`w-1.5 h-1.5 rounded-full ${hasLiveUpdates ? "bg-brand-accent animate-pulse" : "bg-muted-foreground/30"}`} />{hasLiveUpdates ? "Gallery Enabled" : "Gallery Disabled"}</button>
                     <button onClick={handleSaveOverview} disabled={!!saving} className="btn-vercel h-10 px-8 text-xs font-bold uppercase tracking-widest flex items-center gap-2">{saving === "overview" ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}Save Narrative</button>
                   </div>
                 </section>
@@ -351,7 +341,7 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
                 className="space-y-8"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-vastu-green"><Upload size={18} /></div>
+                  <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-brand-accent"><Upload size={18} /></div>
                   <h3 className="text-lg font-medium tracking-tight">Upload to Gallery</h3>
                 </div>
                 
@@ -380,7 +370,7 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
                   <div className="p-8 rounded-3xl border border-border bg-secondary/10 flex flex-col items-center justify-center text-center space-y-4 hover:bg-secondary/20 transition-all">
                     <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-red-500/80"><Video size={24} /></div>
                      <div className="w-full flex gap-2">
-                       <input value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} placeholder="Paste YouTube URl here..." className="flex-1 px-4 py-2 rounded-xl bg-background border border-border text-xs outline-none focus:border-vastu-green/50" />
+                       <input value={youtubeUrl} onChange={e => setYoutubeUrl(e.target.value)} placeholder="Paste YouTube URl here..." className="flex-1 px-4 py-2 rounded-xl bg-background border border-border text-xs outline-none focus:border-brand-accent/50" />
                        <button onClick={handleAddYoutube} disabled={!!saving || !youtubeUrl} className="btn-vercel h-10 px-4 text-[10px] whitespace-nowrap">{saving === "youtube" ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}Add Link</button>
                      </div>
                   </div>

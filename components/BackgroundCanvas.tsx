@@ -49,8 +49,8 @@ export default function BackgroundCanvas() {
         const cy = (o.y + Math.cos(t * 0.35) * 0.04) * H;
         const r  = o.r * Math.min(W, H);
         const g  = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-        g.addColorStop(0, `rgba(196,164,120,0.03)`);
-        g.addColorStop(1, "rgba(196,164,120,0)");
+        g.addColorStop(0, `rgba(226, 255, 175, 0.03)`);
+        g.addColorStop(1, "rgba(226, 255, 175, 0)");
         ctx.fillStyle = g;
         ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
       }
@@ -66,7 +66,7 @@ export default function BackgroundCanvas() {
 
         ctx.beginPath();
         ctx.arc(p.x * W, p.y * H, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(196,164,120,${p.a})`;
+        ctx.fillStyle = `rgba(226, 255, 175, ${p.a})`;
         ctx.fill();
       }
     };

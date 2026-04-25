@@ -7,7 +7,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <ThemeProvider 
       attribute="class" 
       defaultTheme="dark" 
-      storageKey="vastu-admin-theme"
+      storageKey="ipds-admin-theme"
       enableSystem={false}
     >
       {children}

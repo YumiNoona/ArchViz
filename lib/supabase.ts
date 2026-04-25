@@ -234,6 +234,38 @@ export async function getVisitorStats() {
    .sort((a, b) => b.count - a.count);
   return { total, unique, byProject, recent7 };
 }
+ 
+// ── Enquiries ─────────────────────────────────────────────────────────────────
+export interface Enquiry {
+  id: string;
+  name: string;
+  email: string;
+  contact: string;
+  project: string;
+  message: string;
+  timestamp: string;
+}
+ 
+export async function saveEnquiry(data: Omit<Enquiry, "id" | "timestamp">) {
+  const { error } = await supabase.from("enquiries").insert([{
+    ...data, timestamp: new Date().toISOString(),
+  }]);
+  return { error: error?.message ?? null };
+}
+ 
+export async function getEnquiries(): Promise<Enquiry[]> {
+  const { data, error } = await supabase
+    .from("enquiries")
+    .select("*")
+    .order("timestamp", { ascending: false });
+  if (error) console.error("getEnquiries:", error.message);
+  return data ?? [];
+}
+ 
+export async function deleteEnquiry(id: string) {
+  const { error } = await supabase.from("enquiries").delete().eq("id", id);
+  return { error: error?.message ?? null };
+}
 
 // ── Consolidated Content (JSONB) ──────────────────────────────────────────────
 

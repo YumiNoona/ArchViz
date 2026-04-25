@@ -55,28 +55,28 @@ Clients get a branded experience: browse projects, fill a lead form, and launch 
 ```
 IPDS/
 ├── app/
-│   ├── layout.tsx              # Root layout — fonts, providers, cursor, navbar
-│   ├── page.tsx                # Public homepage
-│   ├── admin/page.tsx          # Admin panel (password-protected)
-│   ├── p/[token]/page.tsx      # Private client link pages
-│   └── api/
-│       ├── admin-auth/         # POST — password validation (SHA-256)
-│       ├── send-email/         # POST — Resend transactional email
-│       └── send-otp/           # POST — Twilio → Vonage → Resend OTP
+│   ├── (site)/
+│   │   ├── layout.tsx          # Site layout — fonts, providers, navbar
+│   │   ├── page.tsx            # Public homepage
+│   │   └── p/[token]/page.tsx  # Private client link pages
+│   ├── admin/
+│   │   ├── layout.tsx          # Admin layout
+│   │   └── page.tsx            # Admin dashboard / login
+│   ├── api/
+│   │   ├── admin-auth/         # POST — password validation (SHA-256)
+│   │   ├── send-email/         # POST — Resend transactional email
+│   │   └── send-otp/           # POST — Twilio → Vonage → Resend OTP
+│   └── layout.tsx              # Root layout
 ├── components/
-│   ├── SiteConfigProvider.tsx  # Global CMS context (loads from Supabase)
-│   ├── DebugPanel.tsx          # 8-tab live visual customiser
 │   ├── LaunchModal.tsx         # Visitor form + access gate (public/pw/otp)
-│   ├── ProjectCard.tsx         # Card with 5 hover variants + dual thumbnails
+│   ├── ProjectGrid.tsx         # Main project list with internal ProjectCard
 │   ├── ProjectCarousel.tsx     # Mobile/featured carousel
-│   ├── CustomCursor.tsx        # 6-variant animated cursor
-│   ├── Hero.tsx, Navbar.tsx, About.tsx, Contact.tsx, Footer.tsx
+│   ├── Hero.tsx, Navbar.tsx, Contact.tsx, Footer.tsx
 │   └── BackgroundCanvas.tsx    # WebGL gradient mesh animation
 ├── lib/
-│   ├── supabase.ts             # All DB/storage functions
-│   └── utils.ts                # cn() + haptic()
+│   └── supabase.ts             # All DB/storage functions
 ├── styles/globals.css          # Tailwind base + CSS custom properties
-└── SCHEMA_V2.sql               # Full database setup SQL
+└── DATABASE.sql                # Full database setup SQL
 ```
 
 ---

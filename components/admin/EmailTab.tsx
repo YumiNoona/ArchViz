@@ -62,9 +62,9 @@ The ArchViz Studio Team`);
       className="max-w-4xl space-y-8 pb-20"
     >
       {/* Header Info */}
-      <div className="bevel-card p-6 bg-secondary/30 border-vastu-green/20">
+      <div className="bevel-card p-6 bg-secondary/30 border-brand-accent/20">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-vastu-green/10 border border-vastu-green/20 text-vastu-green">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-brand-accent/10 border border-brand-accent/20 text-brand-accent">
             <Mail size={18} />
           </div>
           <div>
@@ -106,7 +106,7 @@ The ArchViz Studio Team`);
                   <select 
                     value={selProject} 
                     onChange={e => setSelProject(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 border border-border text-sm focus:outline-none focus:ring-1 focus:ring-vastu-green/20"
+                    className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 border border-border text-sm focus:outline-none focus:ring-1 focus:ring-brand-accent/20"
                   >
                     <option value="">Select a project…</option>
                     {projects.map(p => (
@@ -125,7 +125,7 @@ The ArchViz Studio Team`);
                 type="text" 
                 value={subject} 
                 onChange={e => setSubject(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 border border-border text-sm focus:outline-none focus:ring-1 focus:ring-vastu-green/20"
+                className="w-full px-4 py-2.5 rounded-xl bg-secondary/50 border border-border text-sm focus:outline-none focus:ring-1 focus:ring-brand-accent/20"
               />
             </div>
             <div className="space-y-2">
@@ -134,10 +134,10 @@ The ArchViz Studio Team`);
                 value={body} 
                 onChange={e => setBody(e.target.value)}
                 rows={12}
-                className="w-full px-4 py-3 rounded-xl bg-secondary/50 border border-border text-sm font-mono focus:outline-none focus:ring-1 focus:ring-vastu-green/20 resize-none"
+                className="w-full px-4 py-3 rounded-xl bg-secondary/50 border border-border text-sm font-mono focus:outline-none focus:ring-1 focus:ring-brand-accent/20 resize-none"
               />
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                Variables: <span className="text-vastu-green">{"{{name}}"}</span>, <span className="text-vastu-green">{"{{project}}"}</span>
+                Variables: <span className="text-brand-accent">{"{{name}}"}</span>, <span className="text-brand-accent">{"{{project}}"}</span>
               </p>
             </div>
           </section>
@@ -165,7 +165,7 @@ The ArchViz Studio Team`);
         <div className="space-y-4">
           <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Live Preview</label>
           <div className="bevel-card p-6 bg-secondary/20 relative min-h-[400px]">
-            <div className="absolute top-4 right-4 text-[10px] font-bold text-vastu-green/50 uppercase tracking-widest">Preview Mode</div>
+            <div className="absolute top-4 right-4 text-[10px] font-bold text-brand-accent/50 uppercase tracking-widest">Preview Mode</div>
             <div className="space-y-4">
               <div>
                 <span className="text-[10px] font-bold text-muted-foreground uppercase mr-2">Subject:</span>
@@ -183,7 +183,7 @@ The ArchViz Studio Team`);
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 className={`p-4 rounded-xl border flex items-center gap-3 ${
-                  result.failed === 0 ? "bg-vastu-green/10 border-vastu-green/20 text-vastu-green" : "bg-red-400/10 border-red-400/20 text-red-400"
+                  result.failed === 0 ? "bg-brand-accent/10 border-brand-accent/20 text-brand-accent" : "bg-red-400/10 border-red-400/20 text-red-400"
                 }`}
               >
                 {result.failed === 0 ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}

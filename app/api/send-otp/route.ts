@@ -88,17 +88,17 @@ async function sendViaResend(
       to,
       subject: `Your access code for ${projectTitle}`,
       html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:40px 20px;background:#0C0B18;color:#E8E0D0;border-radius:16px;">
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:40px 20px;background:#000000;color:#ffffff;border-radius:24px;border:1px solid #222222;">
           <div style="text-align:center;margin-bottom:32px;">
-            <div style="font-size:28px;font-weight:300;letter-spacing:-0.5px;margin-bottom:6px;">${projectTitle}</div>
-            <p style="font-size:13px;color:#8A7F72;margin:0;">Immersive Architecture Experience</p>
+            <div style="font-size:24px;font-weight:500;letter-spacing:-0.5px;margin-bottom:6px;color:#ffffff;">${projectTitle}</div>
+            <p style="font-size:11px;color:#666666;margin:0;text-transform:uppercase;font-weight:700;letter-spacing:0.2em;">IPDS | Interactive ArchViz</p>
           </div>
-          <p style="font-size:14px;color:#B0A898;margin-bottom:24px;">Hi ${clientName ?? "there"}, here's your one-time access code:</p>
-          <div style="background:#16142A;border:1px solid #2D2A48;border-radius:12px;padding:28px;text-align:center;margin-bottom:24px;">
-            <div style="font-size:42px;font-weight:300;letter-spacing:12px;color:#A78BFA;">${code}</div>
-            <p style="font-size:11px;color:#5A5268;margin-top:12px;margin-bottom:0;">Valid for 10 minutes · One-time use</p>
+          <p style="font-size:14px;color:#999999;margin-bottom:24px;text-align:center;">Hi ${clientName ?? "there"}, here's your one-time access code:</p>
+          <div style="background:#111111;border:1px solid #333333;border-radius:16px;padding:32px;text-align:center;margin-bottom:24px;">
+            <div style="font-size:48px;font-weight:300;letter-spacing:12px;color:#e2ffaf;">${code}</div>
+            <p style="font-size:10px;color:#555555;margin-top:16px;margin-bottom:0;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;">Valid for 10 minutes · One-time use</p>
           </div>
-          <p style="font-size:12px;color:#5A5268;text-align:center;margin:0;">If you didn't request this, ignore this email.</p>
+          <p style="font-size:11px;color:#444444;text-align:center;margin:0;">If you didn't request this, you can safely ignore this email.</p>
         </div>
       `,
     });

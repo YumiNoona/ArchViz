@@ -7,7 +7,7 @@ export default function ProjectLayout({ children }: { children: React.ReactNode 
     <ThemeProvider 
       attribute="class" 
       defaultTheme="dark" 
-      storageKey="vastu-project-theme"
+      storageKey="ipds-project-theme"
       enableSystem={false}
     >
       {children}

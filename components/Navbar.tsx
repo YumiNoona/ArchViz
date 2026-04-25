@@ -7,7 +7,6 @@ import ThemeToggle from "./ThemeToggle";
 
 const navLinks = [
   { label: "Projects", href: "#projects" },
-  { label: "Contact",  href: "#contact"  },
 ];
 
 export default function Navbar() {
@@ -48,18 +47,7 @@ export default function Navbar() {
               </a>
             ))}
             
-            <div className="mx-2 w-px h-4 bg-border" />
             <ThemeToggle />
-
-            <motion.a
-              href="#contact"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="ml-4 btn-vercel h-9 px-4 text-xs group"
-            >
-              Get Started
-              <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-            </motion.a>
           </div>
 
           {/* Mobile Toggle */}
@@ -92,13 +80,7 @@ export default function Navbar() {
                   {label}
                 </a>
               ))}
-              <a
-                href="#contact"
-                className="w-full btn-vercel h-12 text-base mt-4"
-                onClick={() => setMobileOpen(false)}
-              >
-                Get Started
-              </a>
+
             </div>
           </motion.div>
         )}

@@ -10,7 +10,7 @@ import {
   Type, Image as ImageIcon, Layout as LayoutIcon, Save, Mail,
   Link as LinkIcon, Plus, EyeOff
 } from "lucide-react";
-import { supabase, getProjects, getProjectToken, updateProject, type Project } from "@/lib/supabase";
+import { supabase, getProjects, getProjectToken, updateProject, getEnquiries, deleteEnquiry, type Project, type Enquiry } from "@/lib/supabase";
 import { haptic } from "ios-haptics";
 import EditProjectModal from "./EditProjectModal";
 import EmailTab from "./EmailTab";
@@ -30,28 +30,33 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [filterProject, setFilterProject] = useState("all");
   const [sortField, setSortField] = useState<"timestamp"|"name"|"project">("timestamp");
   const [sortDir, setSortDir] = useState<"desc"|"asc">("desc");
-  const [tab, setTab] = useState<"overview"|"visitors"|"projects"|"email">("overview");
+  const [tab, setTab] = useState<"overview"|"visitors"|"projects"|"enquiries"|"email">("overview");
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
+  const [searchEnquiry, setSearchEnquiry] = useState("");
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+ 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [vRes, pRes] = await Promise.all([
+      const [vRes, pRes, eRes] = await Promise.all([
         supabase.from("visitors").select("*").order("timestamp", { ascending: false }),
-        getProjects()
+        getProjects(),
+        getEnquiries()
       ]);
       if (vRes.data) setVisitors(vRes.data);
       if (pRes) setProjects(pRes);
+      if (eRes) setEnquiries(eRes);
     } catch (e) {
       console.error(e);
     }
     setLoading(false);
   }, []);
-
+ 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
+ 
   const filtered = visitors
     .filter((v) => {
       const q = search.toLowerCase();
@@ -63,16 +68,16 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       const valB = (b as any)[sortField] || "";
       return sortDir === "asc" ? valA.localeCompare(valB) : valB.localeCompare(valA);
     });
-
+ 
   const total = visitors.length;
   const unique = new Set(visitors.map(v => v.email)).size;
   const thisWeek = visitors.filter(v => new Date(v.timestamp) > new Date(Date.now() - 7 * 86400000)).length;
   const today = visitors.filter(v => new Date(v.timestamp).toDateString() === new Date().toDateString()).length;
-
+ 
   const projectStats = projects.map((p: Project) => ({
     ...p, count: visitors.filter(v => v.project_id === p.id).length,
   })).sort((a, b) => b.count - a.count);
-
+ 
   const exportCSV = () => {
     const rows = [["Name","Email","Contact","Project","Date"],
       ...filtered.map(v => [v.name, v.email, v.contact, v.project, new Date(v.timestamp).toLocaleDateString()])];
@@ -83,23 +88,35 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     a.click();
   };
 
+  const exportEnquiriesCSV = () => {
+    const filteredE = enquiries.filter(e => {
+      const q = searchEnquiry.toLowerCase();
+      return !q || e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || e.project.toLowerCase().includes(q) || e.message.toLowerCase().includes(q);
+    });
+    const rows = [["Name","Email","Contact","Project","Message","Date"],
+      ...filteredE.map(e => [e.name, e.email, e.contact, e.project, e.message, new Date(e.timestamp).toLocaleDateString()])];
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `enquiries-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+  };
+ 
   const toggleSort = (f: typeof sortField) => {
     if (sortField === f) setSortDir(d => d === "asc" ? "desc" : "asc");
     else { setSortField(f); setSortDir("desc"); }
   };
-
+ 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-
+ 
       {/* ── Sidebar ───────────────────────────────────── */}
-      <aside className="w-64 border-r border-border flex flex-col fixed inset-y-0 left-0 z-40 bg-background/50 backdrop-blur-xl">
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 border-r border-border flex flex-col bg-background/95 backdrop-blur-xl transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Logo" className="dark:hidden h-8 w-auto" />
-            <img src="/dlogo.png" alt="Logo" className="hidden dark:block h-8 w-auto" />
             <div>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-vastu-green animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse" />
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-60">Admin</span>
               </div>
             </div>
@@ -109,20 +126,21 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         <nav className="flex-1 p-4 space-y-1">
           {[
             { id: "overview", label: "Overview", icon: Activity },
+            { id: "projects", label: "Project", icon: Layers },
             { id: "visitors", label: "Visitors", icon: Users },
-            { id: "projects", label: "Projects", icon: Layers },
-            { id: "email", label: "Campaigns", icon: Mail },
+            { id: "enquiries", label: "Enquiry", icon: Mail },
+            { id: "email", label: "Campaign", icon: Globe },
           ].map(({ id, label, icon: Icon }) => (
             <button 
               key={id} 
-              onClick={() => { haptic(); setTab(id as any); }}
+              onClick={() => { haptic(); setTab(id as any); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-medium transition-all ${
                 tab === id 
                 ? "bg-foreground text-background shadow-lg shadow-foreground/10" 
                 : "text-muted-foreground hover:bg-secondary/80"
               }`}
             >
-              <Icon size={16} className={tab === id ? "text-vastu-green" : ""} />
+              <Icon size={16} className={tab === id ? "text-brand-accent" : ""} />
               {label}
               {id === "visitors" && total > 0 && (
                 <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-foreground/10 text-muted-foreground font-mono">
@@ -148,8 +166,21 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         </div>
       </aside>
 
+      {/* ── Overlay for Mobile Sidebar ── */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+ 
       {/* ── Main content ──────────────────────────────── */}
-      <main className="flex-1 ml-64 min-h-screen relative flex flex-col">
+      <main className="flex-1 lg:ml-64 min-h-screen relative flex flex-col">
         {/* Subtle Background Pattern */}
         <div 
           className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -159,22 +190,30 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           }}
         />
 
-        <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md px-10 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-medium tracking-tighter capitalize">
-              {tab}
-            </h1>
-            <p className="text-xs text-muted-foreground mt-0.5 font-light tracking-wide uppercase">
-              {new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" })}
-            </p>
+        <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md px-6 md:px-10 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-xl bg-secondary border border-border text-muted-foreground"
+            >
+              <LayoutIcon size={20} />
+            </button>
+            <div>
+              <h1 className="text-xl md:text-2xl font-medium tracking-tighter capitalize">
+                {tab}
+              </h1>
+              <p className="hidden md:block text-xs text-muted-foreground mt-0.5 font-light tracking-wide uppercase">
+                {new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" })}
+              </p>
+            </div>
           </div>
           
           <button 
             onClick={fetchData} 
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl border border-border text-xs font-bold uppercase tracking-widest hover:bg-secondary transition-all"
+            className="flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-2xl border border-border text-[10px] md:text-xs font-bold uppercase tracking-widest hover:bg-secondary transition-all"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            Sync Data
+            <span className="hidden sm:inline">Sync Data</span>
           </button>
         </header>
 
@@ -192,7 +231,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
                     { label: "Total Visits", value: total, icon: Eye, trend: "+12.5%", color: "text-blue-400" },
-                    { label: "Unique Users", value: unique, icon: Users, trend: "+5.2%", color: "text-vastu-green" },
+                    { label: "Unique Users", value: unique, icon: Users, trend: "+5.2%", color: "text-brand-accent" },
                     { label: "Week Growth", value: thisWeek, icon: TrendingUp, trend: "+18%", color: "text-purple-400" },
                     { label: "Today", value: today, icon: Clock, trend: "+2", color: "text-orange-400" },
                   ].map(({ label, value, icon: Icon, trend, color }) => (
@@ -211,7 +250,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         <span className="text-4xl font-medium tracking-tighter">
                           {loading ? "—" : value}
                         </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-background border border-border ${trend.startsWith('+') ? 'text-vastu-green' : 'text-red-400'}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-background border border-border ${trend.startsWith('+') ? 'text-brand-accent' : 'text-red-400'}`}>
                           {trend}
                         </span>
                       </div>
@@ -237,7 +276,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         return (
                           <div key={p.id} className="group">
                             <div className="flex justify-between text-sm mb-3 font-medium">
-                              <span className="group-hover:text-vastu-green transition-colors">{p.title}</span>
+                              <span className="group-hover:text-brand-accent transition-colors">{p.title}</span>
                               <span className="text-muted-foreground font-mono">{p.count} <span className="text-[10px] opacity-50 ml-1">({pct}%)</span></span>
                             </div>
                             <div className="h-2 w-full bg-secondary border border-border rounded-full overflow-hidden">
@@ -245,7 +284,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                 initial={{ width: 0 }} 
                                 animate={{ width: `${pct}%` }}
                                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                                className="h-full bg-vastu-green rounded-full shadow-[0_0_12px_rgba(226,255,175,0.4)]"
+                                className="h-full bg-brand-accent rounded-full shadow-[0_0_12px_rgba(226,255,175,0.4)]"
                               />
                             </div>
                           </div>
@@ -258,7 +297,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   <div className="bevel-card p-8 bg-secondary/20 rounded-3xl">
                     <div className="flex items-center justify-between mb-10">
                       <h3 className="text-xl font-medium tracking-tight">Recent Leads</h3>
-                      <button className="text-[10px] uppercase font-bold tracking-widest text-vastu-green hover:underline" onClick={() => setTab("visitors")}>
+                      <button className="text-[10px] uppercase font-bold tracking-widest text-brand-accent hover:underline" onClick={() => setTab("visitors")}>
                         View All
                       </button>
                     </div>
@@ -266,7 +305,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     <div className="space-y-6">
                       {visitors.slice(0, 8).map((v) => (
                         <div key={v.id} className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-2xl bg-background border border-border flex items-center justify-center text-sm font-bold text-vastu-green">
+                          <div className="w-10 h-10 rounded-2xl bg-background border border-border flex items-center justify-center text-sm font-bold text-brand-accent">
                             {v.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -298,23 +337,15 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 className="space-y-6"
               >
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="md:col-span-2 relative group">
-                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-vastu-green transition-colors" />
+                  <div className="md:col-span-3 relative group">
+                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-brand-accent transition-colors" />
                     <input 
                       placeholder="Search across leads..." 
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-secondary/50 border border-border focus:outline-none focus:ring-1 focus:ring-vastu-green/20 focus:border-vastu-green/50 transition-all text-sm"
+                      className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-secondary/50 border border-border focus:outline-none focus:ring-1 focus:ring-brand-accent/20 focus:border-brand-accent/50 transition-all text-sm"
                     />
                   </div>
-                  <select 
-                    value={filterProject} 
-                    onChange={e => setFilterProject(e.target.value)}
-                    className="px-4 py-3.5 rounded-2xl bg-secondary/50 border border-border text-sm focus:outline-none focus:ring-1 focus:ring-vastu-green/20"
-                  >
-                    <option value="all">Every Project</option>
-                    {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-                  </select>
                   <button 
                     onClick={exportCSV}
                     className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-foreground text-background text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-black/20"
@@ -371,11 +402,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                               <span className="text-xs text-muted-foreground font-light">{v.email}</span>
                             </td>
                             <td className="px-8 py-6 text-sm font-mono text-muted-foreground">{v.contact}</td>
-                            <td className="px-8 py-6">
-                              <span className="text-[10px] font-bold px-3 py-1 bg-background border border-border rounded-full group-hover:border-vastu-green/30 transition-colors uppercase tracking-widest">
-                                {v.project}
-                              </span>
-                            </td>
+
                             <td className="px-8 py-6">
                               <div className="text-sm font-medium">
                                 {new Date(v.timestamp).toLocaleDateString("en-US", { day: "numeric", month: "long" })}
@@ -401,7 +428,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
               >
                 {projectStats.map((p) => (
-                  <div key={p.id} className="bevel-card p-8 bg-secondary/20 rounded-[2rem] group hover:border-vastu-green/30 transition-all flex flex-col relative overflow-hidden">
+                  <div key={p.id} className="bevel-card p-8 bg-secondary/20 rounded-[2rem] group hover:border-brand-accent/30 transition-all flex flex-col relative overflow-hidden">
                     {/* Status Badge */}
                     <div className="absolute top-4 right-4 flex items-center gap-2">
                        <button 
@@ -412,7 +439,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                            navigator.clipboard.writeText(url);
                            alert("Secure share link copied!");
                          }}
-                         className="p-2 rounded-xl bg-background border border-border text-muted-foreground hover:text-vastu-green transition-all"
+                         className="p-2 rounded-xl bg-background border border-border text-muted-foreground hover:text-brand-accent transition-all"
                          title="Copy share link"
                        >
                          <LinkIcon size={14} />
@@ -423,7 +450,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                            const token = await getProjectToken(p.id);
                            window.open(`${window.location.origin}/p/${token}`, "_blank");
                          }}
-                         className="p-2 rounded-xl bg-background border border-border text-muted-foreground hover:text-vastu-green transition-all"
+                         className="p-2 rounded-xl bg-background border border-border text-muted-foreground hover:text-brand-accent transition-all"
                          title="Open private page"
                        >
                          <ArrowUpRight size={14} />
@@ -433,7 +460,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                            haptic();
                            window.open(`${window.location.origin}/?project=${p.id}`, '_blank');
                          }}
-                         className="p-2 rounded-xl bg-background border border-border text-muted-foreground hover:text-vastu-green transition-all"
+                         className="p-2 rounded-xl bg-background border border-border text-muted-foreground hover:text-brand-accent transition-all"
                          title="Open Site"
                        >
                          <ExternalLink size={14} />
@@ -442,11 +469,9 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
 
                     <div className="flex items-start justify-between mb-6">
                       <div className="flex flex-col gap-2">
-                        <span className="text-[10px] font-bold px-3 py-1.5 bg-background border border-border rounded-full inline-block uppercase tracking-widest text-muted-foreground">
-                          {p.type}
-                        </span>
+
                         <span className={`text-[8px] font-bold px-2 py-0.5 rounded-md uppercase tracking-widest self-start ${
-                          p.status === 'published' ? 'bg-vastu-green/20 text-vastu-green' :
+                          p.status === 'published' ? 'bg-brand-accent/20 text-brand-accent' :
                           p.status === 'discarded' ? 'bg-red-500/20 text-red-400' :
                           'bg-zinc-500/20 text-zinc-400'
                         }`}>
@@ -484,7 +509,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                              fetchData();
                            }}
                            className={`flex-1 py-3 rounded-2xl border border-border text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                             p.is_active ? "bg-vastu-green/10 text-vastu-green hover:bg-vastu-green/20" : "bg-secondary text-muted-foreground hover:bg-background"
+                             p.is_active ? "bg-brand-accent/10 text-brand-accent hover:bg-brand-accent/20" : "bg-secondary text-muted-foreground hover:bg-background"
                            }`}
                          >
                            {p.is_active ? <Eye size={12} /> : <EyeOff size={12} />}
@@ -500,7 +525,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                    className="bevel-card p-8 bg-secondary/10 rounded-[2rem] border-dashed border-2 border-border/50 flex flex-col items-center justify-center text-center hover:bg-secondary/20 transition-all group"
                 >
                   <div className="w-12 h-12 rounded-2xl bg-background border border-border flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Plus size={24} className="text-vastu-green" />
+                    <Plus size={24} className="text-brand-accent" />
                   </div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Add New Project</p>
                 </button>
@@ -510,7 +535,7 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             {tab === ("blog" as any) && (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                  <p className="text-muted-foreground">This tab has been moved to the Projects "Edit" modal.</p>
-                 <button onClick={() => setTab("projects")} className="mt-4 text-vastu-green font-bold text-sm">Go to Projects</button>
+                 <button onClick={() => setTab("projects")} className="mt-4 text-brand-accent font-bold text-sm">Go to Projects</button>
               </div>
             )}
 
@@ -521,6 +546,101 @@ export default function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               >
                 <EmailTab visitors={visitors} />
+              </motion.div>
+            )}
+ 
+            {tab === "enquiries" && (
+              <motion.div 
+                key="enquiries"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="space-y-6"
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-xl font-medium tracking-tight">Project Enquiries</h3>
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-accent/10 border border-brand-accent/20">
+                      <span className="text-[10px] font-bold text-brand-accent uppercase tracking-widest">{enquiries.length} New</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="relative group min-w-[240px]">
+                      <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-brand-accent transition-colors" />
+                      <input 
+                        placeholder="Search enquiries..." 
+                        value={searchEnquiry}
+                        onChange={e => setSearchEnquiry(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-secondary/50 border border-border focus:outline-none focus:border-brand-accent/50 transition-all text-xs"
+                      />
+                    </div>
+                    <button 
+                      onClick={exportEnquiriesCSV}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-foreground text-background text-[10px] font-bold uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-black/20"
+                    >
+                      <Download size={12} /> Export
+                    </button>
+                  </div>
+                </div>
+ 
+                <div className="bevel-card overflow-hidden rounded-3xl">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-secondary/50 border-b border-border">
+                          <th className="text-left px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Sender</th>
+                          <th className="text-left px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact</th>
+                          <th className="text-left px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Project Details</th>
+                          <th className="text-left px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Message</th>
+                          <th className="text-left px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Date</th>
+                          <th className="text-right px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/50">
+                        {enquiries.filter(e => {
+                          const q = searchEnquiry.toLowerCase();
+                          return !q || e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || e.project.toLowerCase().includes(q) || e.message.toLowerCase().includes(q);
+                        }).length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-8 py-24 text-center">
+                              <p className="text-muted-foreground italic">No matching enquiries found.</p>
+                            </td>
+                          </tr>
+                        ) : enquiries.filter(e => {
+                          const q = searchEnquiry.toLowerCase();
+                          return !q || e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q) || e.project.toLowerCase().includes(q) || e.message.toLowerCase().includes(q);
+                        }).map((e) => (
+                          <tr key={e.id} className="hover:bg-secondary/30 transition-colors group">
+                            <td className="px-8 py-6">
+                              <span className="text-sm font-semibold block tracking-tight">{e.name}</span>
+                              <span className="text-xs text-muted-foreground font-light">{e.email}</span>
+                            </td>
+                            <td className="px-8 py-6 text-xs text-muted-foreground font-mono">{e.contact}</td>
+                            <td className="px-8 py-6 text-xs text-muted-foreground font-medium">{e.project || "General Enquiry"}</td>
+                            <td className="px-8 py-6">
+                              <p className="text-xs text-foreground/80 font-light line-clamp-2 max-w-xs">{e.message}</p>
+                            </td>
+                            <td className="px-8 py-6 text-[10px] text-muted-foreground font-mono">
+                              {new Date(e.timestamp).toLocaleDateString()}
+                            </td>
+                            <td className="px-8 py-6 text-right">
+                              <button 
+                                onClick={async () => {
+                                  if(confirm("Delete this enquiry?")) {
+                                    await deleteEnquiry(e.id);
+                                    fetchData();
+                                  }
+                                }}
+                                className="p-2 rounded-xl text-red-400 hover:bg-red-400/10 transition-all"
+                              >
+                                <Plus size={14} className="rotate-45" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

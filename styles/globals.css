@@ -28,7 +28,7 @@
   --secondary-foreground:0 0% 100%;
   --muted:               0 0% 10%;
   --muted-foreground:    0 0% 63%;
-  --accent:              79 100% 84%;       /* Vastu Green: #e2ffaf */
+  --accent:              79 100% 84%;       /* IPDS Green: #e2ffaf */
   --accent-foreground:   0 0% 0%;
   --destructive:         0 62% 30%;
   --destructive-foreground: 0 0% 100%;
@@ -36,8 +36,8 @@
   --input:               0 0% 12%;
   --ring:                0 0% 100%;
 
-  /* Vastu Specifics */
-  --vastu-green:         79 100% 84%;
+  /* Brand Specifics */
+  --brand-accent:         79 100% 84%;
   --bevel-top:           rgba(255, 255, 255, 0.05);
   --bevel-bottom:        rgba(0, 0, 0, 0.2);
 }
@@ -66,25 +66,33 @@
   --input:               0 0% 90%;
   --ring:                0 0% 0%;
 
-  --vastu-green:         79 100% 40%;
+  --brand-accent:         79 100% 40%;
   --bevel-top:           rgba(255, 255, 255, 0.8);
   --bevel-bottom:        rgba(0, 0, 0, 0.05);
 }
 
 /* ─── Base ────────────────────────────────────────────── */
 @layer base {
-  * { @apply border-border; }
+  * { 
+    @apply border-border; 
+  }
   
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
+  }
+
+  /* Seamless theme transitions for all structural and text elements */
+  div, section, header, footer, nav, main, aside, h1, h2, h3, h4, h5, h6, p, span, a, button, input, textarea, label, svg {
+    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
   }
 
   h1, h2, h3, h4 { @apply font-medium tracking-tight; }
 
   ::selection {
-    background: hsl(var(--vastu-green));
+    background: hsl(var(--brand-accent));
     color: #000;
   }
 }
@@ -103,11 +111,37 @@
   }
 
   .bevel-card:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
+    border-color: hsl(var(--brand-accent)/0.3);
+    transform: translateY(-2px);
     box-shadow: 
       inset 0 1px 0 0 var(--bevel-top),
-      0 4px 12px 0 var(--bevel-bottom);
+      0 12px 24px -8px rgba(0, 0, 0, 0.4);
+  }
+
+  .premium-card {
+    position: relative;
+    border: 1px solid hsl(var(--border));
+    background: linear-gradient(135deg, hsl(var(--secondary)/0.4) 0%, hsl(var(--background)) 100%);
+    backdrop-filter: blur(20px);
+    border-radius: 2.5rem;
+    box-shadow: 
+      inset 0 1px 1px 0 rgba(255, 255, 255, 0.05),
+      0 20px 40px -12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+  }
+
+  .premium-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent, rgba(255,255,255,0.05));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
   }
 
   .light .bevel-card:hover {

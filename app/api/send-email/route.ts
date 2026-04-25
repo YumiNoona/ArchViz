@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: process.env.EMAIL_FROM ?? "ArchViz Studio <onboarding@resend.dev>",
+          from: process.env.EMAIL_FROM ?? "IPDS <onboarding@resend.dev>",
           to: [v.email],
           subject: interpolate(subject, v),
           text: interpolate(body, v),
@@ -58,15 +58,15 @@ export async function POST(req: NextRequest) {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d1117;padding:40px 20px;">
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#161b22;border-radius:16px;border:1px solid #30363d;overflow:hidden;max-width:600px;width:100%;">
-        <tr><td style="background:#c9a84c;height:4px;font-size:0;">&nbsp;</td></tr>
+        <tr><td style="background:#e2ffaf;height:4px;font-size:0;">&nbsp;</td></tr>
         <tr><td style="padding:40px;">
-          <p style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8b949e;margin:0 0 24px;">Interactive ArchViz Studio</p>
+          <p style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#8b949e;margin:0 0 24px;">IPDS | Interactive Architectural Visualization</p>
           <div style="font-size:15px;line-height:1.8;color:#e6edf3;white-space:pre-wrap;">${interpolate(body, v).replace(/\n/g,"<br>")}</div>
           <hr style="border:none;border-top:1px solid #30363d;margin:32px 0;">
-          <p style="font-size:12px;color:#8b949e;margin:0;">You received this because you explored an Interactive ArchViz project.</p>
+          <p style="font-size:12px;color:#8b949e;margin:0;">You received this because you explored an IPDS project.</p>
         </td></tr>
         <tr><td style="background:#0d1117;padding:20px 40px;border-top:1px solid #30363d;">
-          <p style="font-size:11px;color:#484f58;margin:0;">© Interactive ArchViz Studio</p>
+          <p style="font-size:11px;color:#484f58;margin:0;">© IPDS</p>
         </td></tr>
       </table>
     </td></tr>

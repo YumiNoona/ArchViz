@@ -12,7 +12,7 @@ export default function AdminPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (localStorage.getItem("vc_admin_session") === "true") {
+    if (localStorage.getItem("ipds_admin_session") === "true") {
       setIsAuth(true);
     }
   }, []);
@@ -30,7 +30,7 @@ export default function AdminPage() {
       });
 
       if (res.ok) {
-        localStorage.setItem("vc_admin_session", "true");
+        localStorage.setItem("ipds_admin_session", "true");
         setIsAuth(true);
       } else {
         const data = await res.json();
@@ -44,7 +44,7 @@ export default function AdminPage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("vc_admin_session");
+    localStorage.removeItem("ipds_admin_session");
     setIsAuth(false);
   };
 
@@ -64,7 +64,7 @@ export default function AdminPage() {
         className="relative w-full max-w-md"
       >
         <div className="bevel-card p-10 bg-[#0A0A0A]/80 backdrop-blur-xl border-border/50 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-vastu-green/10 border border-vastu-green/20 flex items-center justify-center mx-auto mb-8 text-vastu-green">
+          <div className="w-16 h-16 rounded-2xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center mx-auto mb-8 text-brand-accent">
             <Shield size={32} />
           </div>
 
@@ -75,14 +75,14 @@ export default function AdminPage() {
             <div className="space-y-2 text-left">
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Secure Passcode</label>
               <div className="relative group">
-                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-vastu-green transition-colors" />
+                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-brand-accent transition-colors" />
                 <input 
                   type="password" 
                   autoFocus
                   placeholder="••••••••"
                   value={pass}
                   onChange={e => setPass(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-xl bg-secondary/50 border border-border focus:outline-none focus:ring-1 focus:ring-vastu-green/20 focus:border-vastu-green/50 transition-all text-sm tracking-widest shadow-inner"
+                  className="w-full pl-12 pr-4 py-3 rounded-xl bg-secondary/50 border border-border focus:outline-none focus:ring-1 focus:ring-brand-accent/20 focus:border-brand-accent/50 transition-all text-sm tracking-widest shadow-inner"
                 />
               </div>
             </div>
