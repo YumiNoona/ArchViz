@@ -67,6 +67,7 @@ CREATE TABLE enquiries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   email TEXT NOT NULL,
+  contact TEXT,
   project TEXT,
   message TEXT NOT NULL,
   timestamp TIMESTAMPTZ DEFAULT NOW(),
