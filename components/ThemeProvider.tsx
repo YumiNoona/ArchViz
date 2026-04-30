@@ -32,7 +32,7 @@ function ThemeRipple() {
         Math.max(cy, canvas.height - cy)
       ) + 10;
 
-      const duration = 720;
+      const duration = 420; // was 720 — faster feels snappier
       const start = performance.now();
 
       const tick = (now: number) => {
@@ -74,6 +74,7 @@ function ThemeRipple() {
       style={{
         position: "fixed", inset: 0, width: "100vw", height: "100vh",
         display: "none", zIndex: 9997, pointerEvents: "none",
+        willChange: "transform", // promote to GPU layer
       }}
     />
   );

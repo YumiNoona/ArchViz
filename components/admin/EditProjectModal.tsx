@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Save, Loader2, Image as ImageIcon, Plus, Trash2, 
@@ -8,6 +8,7 @@ import {
   Construction, ExternalLink
 } from "lucide-react";
 import { haptic } from "ios-haptics";
+import Image from "next/image";
 import { 
   updateProject, 
   getProjectBlog, 
@@ -56,11 +57,7 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
   const [hasLiveUpdates, setHasLiveUpdates] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState("");
 
-  useEffect(() => {
-    if (project?.id) loadBlogData();
-  }, [project?.id]);
-
-  async function loadBlogData() {
+  const loadBlogData = useCallback(async () => {
     if (!project?.id) return;
     setLoading(true);
     const data = await getProjectBlog(project.id);
@@ -70,7 +67,11 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
       setHasLiveUpdates(data.has_live_updates || false);
     }
     setLoading(false);
-  }
+  }, [project?.id]);
+
+  useEffect(() => {
+    if (project?.id) loadBlogData();
+  }, [project?.id, loadBlogData]);
 
   async function handleSaveGeneral() {
     setSaving("general");
@@ -103,15 +104,36 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
         onClose();
       }
     } else {
+      let mainUrl = project!.image_url;
+      let darkUrl = project!.image_url_dark;
+      let lightUrl = project!.image_url_light;
+      
+      const { uploadProjectImage } = await import("@/lib/supabase");
+      
+      if (mainImage) {
+        const m = await uploadProjectImage(mainImage, title);
+        if (!m.error) mainUrl = m.url;
+      }
+      if (darkImage) {
+        const d = await uploadProjectImage(darkImage, title, "-dark");
+        if (!d.error) darkUrl = d.url;
+      }
+      if (lightImage) {
+        const l = await uploadProjectImage(lightImage, title, "-light");
+        if (!l.error) lightUrl = l.url;
+      }
+
       const { error } = await updateProject(project!.id, {
         title, description, stream_url: streamUrl, location, year, type,
         access_type: accessType, access_password: accessPassword,
-        status: "published" // Force publish on save
+        status: "published", // Force publish on save
+        image_url: mainUrl,
+        image_url_dark: darkUrl,
+        image_url_light: lightUrl,
       });
       if (!error) {
         haptic.confirm();
         onUpdate();
-        // Removed alert, will rely on loading/success state instead.
       }
     }
     setSaving("success");
@@ -265,8 +287,8 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
                       <div className="space-y-2">
                          <label className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">Main Thumbnail</label>
                          <div className="relative group aspect-video bg-secondary/20 border border-border border-dashed rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-secondary/30 transition-all">
-                            {mainImage ? <img src={URL.createObjectURL(mainImage)} className="absolute inset-0 w-full h-full object-cover" /> 
-                             : project?.image_url ? <img src={project.image_url} className="absolute inset-0 w-full h-full object-cover" /> 
+                            {mainImage ? <Image src={URL.createObjectURL(mainImage)} alt="Preview" fill unoptimized className="absolute inset-0 object-cover" /> 
+                             : project?.image_url ? <Image src={project.image_url} alt={project.title} fill className="absolute inset-0 object-cover" /> 
                              : <><ImageIcon size={24} className="text-muted-foreground/30" /><span className="text-[10px] font-bold text-muted-foreground/50">Select Image</span></>}
                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => setMainImage(e.target.files?.[0] || null)} />
                          </div>
@@ -274,8 +296,8 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
                       <div className="space-y-2 opacity-60 hover:opacity-100 transition-opacity">
                          <label className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">Dark Mode (Opt)</label>
                          <div className="relative group aspect-video bg-secondary/20 border border-border border-dashed rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2 cursor-pointer">
-                            {darkImage ? <img src={URL.createObjectURL(darkImage)} className="absolute inset-0 w-full h-full object-cover" /> 
-                             : project?.image_url_dark ? <img src={project.image_url_dark} className="absolute inset-0 w-full h-full object-cover" /> 
+                            {darkImage ? <Image src={URL.createObjectURL(darkImage)} alt="Dark preview" fill unoptimized className="absolute inset-0 object-cover" /> 
+                             : project?.image_url_dark ? <Image src={project.image_url_dark} alt="Dark version" fill className="absolute inset-0 object-cover" /> 
                              : <ImageIcon size={20} className="text-muted-foreground/30" />}
                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => setDarkImage(e.target.files?.[0] || null)} />
                          </div>
@@ -283,8 +305,8 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
                       <div className="space-y-2 opacity-60 hover:opacity-100 transition-opacity">
                          <label className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">Light Mode (Opt)</label>
                          <div className="relative group aspect-video bg-secondary/20 border border-border border-dashed rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2 cursor-pointer">
-                            {lightImage ? <img src={URL.createObjectURL(lightImage)} className="absolute inset-0 w-full h-full object-cover" /> 
-                             : project?.image_url_light ? <img src={project.image_url_light} className="absolute inset-0 w-full h-full object-cover" /> 
+                            {lightImage ? <Image src={URL.createObjectURL(lightImage)} alt="Light preview" fill unoptimized className="absolute inset-0 object-cover" /> 
+                             : project?.image_url_light ? <Image src={project.image_url_light} alt="Light version" fill className="absolute inset-0 object-cover" /> 
                              : <ImageIcon size={20} className="text-muted-foreground/30" />}
                             <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => setLightImage(e.target.files?.[0] || null)} />
                          </div>
@@ -379,12 +401,16 @@ export default function EditProjectModal({ project, onClose, onUpdate }: EditPro
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-4 pt-4 border-t border-border">
                   {(blogData?.gallery_updates || []).map((u: any, i: number) => (
                     <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-border group bg-secondary/30 flex items-center justify-center">
-                       {u.media_type === "image" ? (
-                         <img src={u.media_url} className="w-full h-full object-cover" />
-                       ) : (
+                        {u.media_type === "image" ? (
+                          <div className="relative w-full h-full">
+                            <Image src={u.media_url} alt="Gallery item" fill className="object-cover" />
+                          </div>
+                        ) : (
                          <>
                            {u.thumbnail_url ? (
-                             <img src={u.thumbnail_url} className="w-full h-full object-cover opacity-60" />
+                             <div className="relative w-full h-full">
+                               <Image src={u.thumbnail_url} alt="Video thumbnail" fill className="object-cover opacity-60" />
+                             </div>
                            ) : (
                              <Video size={24} className="text-muted-foreground/30" />
                            )}

@@ -60,17 +60,7 @@ export default function LaunchModal({ project, onClose, privateToken, clientEmai
     return !Object.keys(e).length;
   };
 
-  // Debug shortcut to jump straight to instructions panel
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey || e.altKey) && (e.code === 'KeyQ' || e.key.toLowerCase() === 'q')) {
-        e.preventDefault();
-        setStage("instructions");
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  // Debug shortcut removed
 
   const normalizePhone = (p: string) => {
     const n = p.replace(/[\s\-()]/g, "");
@@ -178,7 +168,7 @@ export default function LaunchModal({ project, onClose, privateToken, clientEmai
           style={{ background: "hsl(222 24% 3%/0.8)", backdropFilter: "blur(12px)" }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
 
-        <motion.div className="relative w-full max-w-[560px] premium-card overflow-hidden"
+        <motion.div className="relative w-full max-w-[720px] premium-card overflow-hidden"
           layout
           initial={{ scale: 0.88, opacity: 0, y: 20, filter: "blur(8px)" }}
           animate={{ scale: 1, opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -201,15 +191,19 @@ export default function LaunchModal({ project, onClose, privateToken, clientEmai
 
             {/* ── INSTRUCTIONS ──────────────────────────────────────── */}
             {stage === "instructions" && (
-              <motion.div key="instructions" className="p-9"
+              <motion.div key="instructions" className="p-12"
                 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <h2 className="text-2xl font-medium tracking-tight mb-5 text-white">Before you start</h2>
+                <h2 className="text-4xl font-medium tracking-tight mb-8 text-white">Before you start</h2>
 
-                <div className="p-5 rounded-[2rem] mb-8 bg-brand-accent/5 border border-brand-accent/20">
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    <strong className="text-brand-accent mb-2 block uppercase tracking-widest text-[10px]">Session Notice</strong>
+                <div className="p-8 rounded-[2.5rem] mb-12 bg-white/[0.02] border border-white/10 relative overflow-hidden group">
+                  <p className="text-base leading-relaxed text-muted-foreground relative z-10 font-light">
+                    <strong className="text-white/40 mb-4 block uppercase tracking-[0.4em] text-[10px] font-bold">Important Session Notice</strong>
                     These immersive experiences run on high-performance cloud GPUs. To manage costs and ensure availability,
-                    <span className="text-foreground font-medium"> each session is limited to 15 minutes</span>. Inactive sessions will be disconnected.
+                    <span className="text-foreground"> each session is </span>
+                    <span className="text-yellow-400 font-bold underline underline-offset-4 decoration-yellow-400/30">
+                      limited to 15 minutes
+                    </span>. 
+                    Inactive sessions will be automatically disconnected to free up resources.
                   </p>
                 </div>
 

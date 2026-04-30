@@ -4,9 +4,12 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import Link from "next/link";
+import Image from "next/image";
 
 const navLinks = [
   { label: "Projects", href: "#projects" },
+  { label: "Our Work", href: "#work" },
 ];
 
 export default function Navbar() {
@@ -30,10 +33,24 @@ export default function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           {/* Logo */}
-          <a href="/" className="flex items-center group">
-            <img src="/logo.png" alt="IPDS Logo" className="dark:hidden h-10 w-auto transition-transform group-hover:scale-105" />
-            <img src="/dlogo.png" alt="IPDS Logo" className="hidden dark:block h-10 w-auto transition-transform group-hover:scale-105" />
-          </a>
+          <Link href="/" className="flex items-center group">
+            <div className="relative h-10 w-24">
+              <Image 
+                src="/logo.png" 
+                alt="IPDS Logo" 
+                fill 
+                className="dark:hidden object-contain transition-transform group-hover:scale-105" 
+                priority
+              />
+              <Image 
+                src="/dlogo.png" 
+                alt="IPDS Logo" 
+                fill 
+                className="hidden dark:block object-contain transition-transform group-hover:scale-105" 
+                priority
+              />
+            </div>
+          </Link>
 
           {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-1">
@@ -48,6 +65,17 @@ export default function Navbar() {
             ))}
             
             <ThemeToggle />
+            
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="ml-4 btn-vercel h-10 px-6 text-xs"
+              onClick={() => {
+                document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              Contact Us
+            </motion.button>
           </div>
 
           {/* Mobile Toggle */}

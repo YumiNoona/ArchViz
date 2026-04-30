@@ -14,6 +14,8 @@ function useToken() {
   return window.location.pathname.split("/p/")[1] ?? "";
 }
 
+import { ThemeProvider } from "@/components/ThemeProvider";
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function PrivateLinkPage() {
   const token = useToken();
@@ -37,7 +39,7 @@ export default function PrivateLinkPage() {
   if (status === "not-found") return <NotFound />;
   
   return (
-    <>
+    <ThemeProvider key={`theme-${project!.id}`} attribute="class" defaultTheme="dark" enableSystem={false} storageKey={`ipds-project-${project!.id}`}>
       <ProjectDetail
         project={project!}
         onBack={() => {}}
@@ -55,7 +57,7 @@ export default function PrivateLinkPage() {
           />
         )}
       </AnimatePresence>
-    </>
+    </ThemeProvider>
   );
 }
 

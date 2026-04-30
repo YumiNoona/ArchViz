@@ -13,7 +13,10 @@ import {
   ArrowLeft, Play, ExternalLink, ChevronLeft, ChevronRight,
   MapPin, ZoomIn, Info, Activity, ExternalLink as ExtIcon
 } from "lucide-react";
+import Image from "next/image";
 import { getProjectBlog, type Project, type BlogSection, type SiteUpdate } from "@/lib/supabase";
+
+const MotionImage = motion(Image);
 
 // ─── Theme Constants ──────────────────────────────────────────────────────────
 
@@ -131,11 +134,14 @@ function Gallery({ media }: { media: SiteUpdate[] }) {
 
     // Default image
     return (
-      <img
+      <Image
         src={item.media_url}
-        className={`w-full h-full object-cover ${!isSub ? "cursor-zoom-in" : ""}`}
+        fill
+        unoptimized
+        className={`object-cover ${!isSub ? "cursor-zoom-in" : ""}`}
         onClick={() => !isSub && setLightbox(true)}
         alt=""
+        sizes={isSub ? "100px" : "(max-width: 768px) 100vw, 1200px"}
       />
     );
   };
@@ -186,7 +192,7 @@ function Gallery({ media }: { media: SiteUpdate[] }) {
             >
               <div className="absolute inset-0 pointer-events-none">
                 {m.thumbnail_url ? (
-                  <img src={m.thumbnail_url} className="w-full h-full object-cover" alt="Video Thumbnail" />
+                  <Image src={m.thumbnail_url} fill unoptimized className="object-cover" alt="Video Thumbnail" sizes="100px" />
                 ) : (
                   renderMedia(m, true)
                 )}
@@ -211,8 +217,12 @@ function Gallery({ media }: { media: SiteUpdate[] }) {
             onClick={() => setLightbox(false)}
           >
             {media[active]?.media_type === "image" ? (
-              <motion.img
+              <MotionImage
                 src={media[active]?.media_url}
+                alt="Enlarged gallery item"
+                width={1920}
+                height={1080}
+                unoptimized
                 className="max-w-full max-h-[90vh] rounded-3xl object-contain shadow-2xl"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -270,7 +280,7 @@ export default function ProjectDetail({
     getProjectBlog(project.id).then(setData);
     // Sync with dark mode by default
     setTheme("dark");
-  }, [project.id]);
+  }, [project.id, setTheme]);
 
   const p = data || project; // Fallback to provided project while loading detailed data
 
@@ -316,15 +326,19 @@ export default function ProjectDetail({
       {/* ── Hero Section ── */}
       <header className="relative h-screen flex items-end justify-start overflow-hidden">
         <AnimatePresence mode="wait">
-          <motion.img 
+          <MotionImage 
             key={heroTheme}
             src={heroTheme === "dark" && p.image_url_dark ? p.image_url_dark : heroTheme === "light" && p.image_url_light ? p.image_url_light : p.image_url} 
+            fill
+            priority
+            unoptimized
+            alt={p.title}
             style={{ y: heroY }}
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1.1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.2, ease: "anticipate" }}
-            className="absolute inset-0 w-full h-full object-cover" 
+            className="absolute inset-0 object-cover" 
           />
         </AnimatePresence>
         
@@ -415,12 +429,12 @@ export default function ProjectDetail({
           <aside className="space-y-12">
             
             {/* Project Info Card */}
-            <div className="p-10 rounded-[2.5rem] bg-secondary/40 border border-border backdrop-blur-md space-y-10 lg:sticky lg:top-32 transition-colors duration-300">
-              <div className="space-y-6">
+            <div className="p-8 rounded-[2.5rem] bg-secondary/40 border border-border backdrop-blur-md space-y-8 lg:sticky lg:top-32 transition-colors duration-300">
+              <div className="space-y-5">
                  <Label>{p.title}</Label>
-                 <div className="grid gap-6">
+                 <div className="grid gap-4">
                     {specs.map(spec => (
-                      <div key={spec.label} className="group border-b border-border transition-colors duration-300 pb-4 last:border-0">
+                      <div key={spec.label} className="group border-b border-border transition-colors duration-300 pb-3 last:border-0">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-brand-accent transition-colors">{spec.label}</p>
                         <p className="text-sm text-foreground/80 font-light mt-1 transition-colors duration-300">{spec.value}</p>
                       </div>
@@ -432,7 +446,7 @@ export default function ProjectDetail({
               {p.stream_url && (
                 <button
                   onClick={() => onLaunch(p)}
-                  className="w-full h-16 rounded-2xl bg-foreground text-background font-bold uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-brand-accent hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-brand-accent/20"
+                  className="w-full h-14 rounded-2xl bg-foreground text-background font-bold uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-brand-accent hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl shadow-brand-accent/20"
                 >
                   <Play size={14} fill="currentColor" />
                   Launch Experience
@@ -447,10 +461,16 @@ export default function ProjectDetail({
 
       </main>
 
-      <footer className="py-24 border-t border-border transition-colors duration-300 text-center px-8">
-        <p className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] opacity-40">
-          All Rights Reserved IPDS 2026
-        </p>
+      <footer className="py-12 border-t border-border transition-colors duration-300 px-8 md:px-12">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-40">
+            All Rights Reserved IPDS 2026
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold uppercase tracking-widest opacity-30">Made by</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-accent/60">Vastu Chitra</span>
+          </div>
+        </div>
       </footer>
     </motion.div>
   );

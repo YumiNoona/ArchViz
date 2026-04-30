@@ -5,6 +5,7 @@ import { motion, useInView } from "framer-motion";
 import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
 import { haptic } from "ios-haptics";
 import { saveEnquiry } from "@/lib/supabase";
+import { animate } from "animejs";
 
 export default function Contact() {
   const ref = useRef<HTMLDivElement>(null);
@@ -13,10 +14,13 @@ export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", contact: "", project: "", message: "" });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const successIconRef = useRef<HTMLDivElement>(null);
+  const btnIconRef = useRef<HTMLDivElement>(null);
+  const [btnHovered, setBtnHovered] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (form.contact.length !== 10) {
       alert("Invalid number. Please enter a 10-digit mobile number.");
       return;
@@ -42,6 +46,29 @@ export default function Contact() {
       return () => clearTimeout(timer);
     }
   }, [submitted]);
+
+  // Success icon animation
+  useEffect(() => {
+    if (submitted && successIconRef.current) {
+      animate(successIconRef.current, {
+        rotate: [0, 360],
+        scale: [0.8, 1.1, 1],
+        duration: 1000,
+        easing: "easeOutElastic(1, .5)",
+      });
+    }
+  }, [submitted]);
+
+  // Button icon animation
+  useEffect(() => {
+    if (btnIconRef.current) {
+      animate(btnIconRef.current, {
+        rotate: btnHovered ? 45 : 0,
+        duration: 200,
+        easing: "easeOutCubic",
+      });
+    }
+  }, [btnHovered]);
 
   const contacts = [
     { icon: Mail, label: "Email", value: "admin@i-pds.com", href: `mailto:admin@i-pds.com` },
@@ -87,7 +114,7 @@ export default function Contact() {
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                     className="text-6xl lg:text-7xl font-medium tracking-tighter"
                   >
-                    Let's build
+                    Let&apos;s build
                   </motion.h2>
                 </div>
                 <div className="overflow-hidden pb-4 -mb-4">
@@ -108,7 +135,7 @@ export default function Contact() {
                 transition={{ delay: 0.2, duration: 0.7 }}
                 className="text-lg text-muted-foreground font-light leading-relaxed max-w-md"
               >
-                Have a project in mind? Share your brief and we'll respond within 24 hours.
+                Have a project in mind? Share your brief and we&apos;ll respond within 24 hours.
               </motion.p>
             </div>
 
@@ -151,12 +178,15 @@ export default function Contact() {
           >
             {submitted ? (
               <div className="premium-card p-16 text-center border-brand-accent/20">
-                <div className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center bg-brand-accent/10 border border-brand-accent/20">
+                <div 
+                  ref={successIconRef}
+                  className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center bg-brand-accent/10 border border-brand-accent/20"
+                >
                   <ArrowUpRight size={28} className="text-brand-accent" />
                 </div>
                 <h3 className="text-3xl font-medium tracking-tight mb-4">Message sent.</h3>
                 <p className="text-muted-foreground font-light">
-                  We'll review your project details and get back to you shortly.
+                  We&apos;ll review your project details and get back to you shortly.
                 </p>
               </div>
             ) : (
@@ -184,7 +214,7 @@ export default function Contact() {
                     </label>
                     <input
                       type="email"
-                      placeholder="sharma@i-pds.com"
+                      placeholder="sharma@gmail.com"
                       required
                       className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm outline-none focus:border-brand-accent/40 focus:ring-1 focus:ring-brand-accent/10 transition-all"
                       value={form.email}
@@ -246,19 +276,23 @@ export default function Contact() {
                   disabled={loading}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
+                  onMouseEnter={() => setBtnHovered(true)}
+                  onMouseLeave={() => setBtnHovered(false)}
                   className="relative group w-full py-4 rounded-2xl bg-foreground text-background text-base font-medium flex items-center justify-center gap-3 mt-4 overflow-hidden disabled:opacity-50 transition-all shadow-xl shadow-black/20"
                 >
-                  <motion.div 
+                  <motion.div
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"
                     style={{ skewX: '-20deg' }}
                   />
-                  {loading ? "Sending..." : "Send Enquiry"} 
-                  <motion.div
-                    animate={loading ? {} : { x: [0, 2, 0], y: [0, -2, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                  <span>
+                    {loading ? "Sending..." : "Send Enquiry"}
+                  </span>
+                  <div 
+                    ref={btnIconRef} 
+                    className="w-5 h-5 flex items-center justify-center will-change-transform"
                   >
-                    <ArrowUpRight size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </motion.div>
+                    <ArrowUpRight size={18} className="antialiased" />
+                  </div>
                 </motion.button>
 
                 <p className="text-[10px] text-center text-muted-foreground tracking-wide font-medium py-2">

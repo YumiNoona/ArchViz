@@ -81,13 +81,14 @@
     @apply bg-background text-foreground;
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
-    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
   }
 
-  /* Seamless theme transitions for all structural and text elements */
-  div, section, header, footer, nav, main, aside, h1, h2, h3, h4, h5, h6, p, span, a, button, input, textarea, label, svg {
-    transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
-  }
+  /* 
+   * REMOVED: blanket 0.5s transitions on every element.
+   * That was causing hundreds of simultaneous style recalculations on theme switch.
+   * Theme changes are now instant — the canvas ripple in ThemeProvider handles
+   * the visual transition effect instead.
+   */
 
   h1, h2, h3, h4 { @apply font-medium tracking-tight; }
 

@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowUpRight, MapPin, Star } from "lucide-react";
+import Image from "next/image";
 import type { Project } from "@/lib/supabase";
+
+const MotionImage = motion(Image);
 
 export type CarouselStyle = "fan-3d" | "drift" | "stack" | "reveal" | "filmstrip" | "dynamic";
 
@@ -90,16 +93,17 @@ function Fan3DCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
           return (
             <motion.div
               key={p.id}
-              layout
+              initial={false}
               animate={{
                 x: pos.x,
                 z: pos.z,
                 rotateY: pos.ry,
-                scale: pos.scale,
+                scale: isActive ? pos.scale * 1.05 : pos.scale,
                 opacity: pos.opacity,
+                boxShadow: isActive ? "0 25px 50px -12px rgba(226, 255, 175, 0.1)" : "0 0 0 rgba(0,0,0,0)",
               }}
               transition={{
-                duration: 0.8,
+                duration: 0.6,
                 ease: [0.16, 1, 0.3, 1]
               }}
               className="absolute cursor-pointer"
@@ -107,50 +111,62 @@ function Fan3DCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
                 width: isMobile ? "280px" : "340px",
                 zIndex: pos.zIndex,
                 transformStyle: "preserve-3d",
+                willChange: "transform, opacity",
               }}
               onClick={() => !isActive && goto(i)}
             >
-              <div className={`bevel-card rounded-[2.5rem] bg-secondary/80 backdrop-blur-xl transition-all duration-500 ${isActive ? "border-brand-accent/40 shadow-2xl shadow-brand-accent/10 scale-105" : "grayscale-[40%] opacity-50"}`}>
-                {/* Image Container */}
-                <div className="relative aspect-[16/10] overflow-hidden rounded-[2.5rem]">
-                  <img src={p.image_url} alt={p.title} className="w-full h-full object-cover transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-90" />
-                  
-                  {p.featured && (
-                    <div className="absolute top-6 left-6">
-                      <span className="px-3 py-1 rounded-full bg-brand-accent/20 border border-brand-accent/30 text-brand-accent text-[10px] uppercase font-bold tracking-widest backdrop-blur-md">
-                        Featured
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="absolute bottom-0 left-0 right-0 p-8">
-                    <p className="text-2xl font-medium tracking-tight mb-1">{p.title}</p>
+              <div className={`relative h-[480px] bevel-card rounded-[2.5rem] bg-secondary/80 backdrop-blur-xl border transition-all duration-500 overflow-hidden ${isActive ? "border-brand-accent/40 shadow-2xl shadow-brand-accent/10" : "border-white/5 grayscale-[40%] opacity-50"}`}>
+                <Image 
+                  src={p.image_url} 
+                  alt={p.title} 
+                  fill 
+                  unoptimized
+                  sizes="(max-width: 768px) 280px, 340px"
+                  className="object-cover" 
+                  priority={Math.abs(norm) <= 1}
+                  quality={85}
+                />
+                
+                {/* Gradient Overlay */}
+                <div className={`absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent transition-opacity duration-700 ${isActive ? "opacity-90" : "opacity-40"}`} />
+                
+                {/* Content Overlay */}
+                <div className="absolute inset-0 p-8 flex flex-col justify-end">
+                  <motion.div
+                    animate={{ y: isActive ? 0 : 20, opacity: isActive ? 1 : 0.8 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <p className={`text-2xl font-medium tracking-tight mb-1 transition-colors duration-500 ${isActive ? "text-foreground" : "text-foreground/60"}`}>{p.title}</p>
                     <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-widest font-bold opacity-70">
                       <MapPin size={10} className="text-brand-accent" />{p.location}
                     </div>
-                  </div>
-                </div>
+                  </motion.div>
 
-                {/* Sub-panel */}
-                <AnimatePresence>
-                  {isActive && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <div className="p-8 pt-2 border-t border-border/50 bg-background/50">
+                  <AnimatePresence>
+                    {isActive && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                        animate={{ height: "auto", opacity: 1, marginTop: 16 }}
+                        exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
+                      >
                         <p className="text-sm text-muted-foreground mb-6 line-clamp-2 leading-relaxed font-light">
                           {p.description}
                         </p>
                         <ExploreBtn project={p} onExplore={onExplore} />
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {p.featured && (
+                  <div className="absolute top-6 left-6">
+                    <span className="px-3 py-1 rounded-full bg-brand-accent/20 border border-brand-accent/30 text-brand-accent text-[10px] uppercase font-bold tracking-widest backdrop-blur-md">
+                      Featured
+                    </span>
+                  </div>
+                )}
               </div>
             </motion.div>
           );
@@ -196,15 +212,19 @@ function RevealCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (
   return (
     <div className="relative aspect-video md:aspect-[21/9] rounded-[2.5rem] overflow-hidden border border-border bg-secondary/20">
       <AnimatePresence mode="wait">
-        <motion.img 
+        <MotionImage 
           key={p.id} 
           src={p.image_url} 
           alt={p.title} 
+          fill
+          unoptimized
+          sizes="100vw"
           initial={{ opacity: 0, scale: 1.05 }} 
           animate={{ opacity: 1, scale: 1 }} 
           exit={{ opacity: 0 }} 
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} 
-          className="absolute inset-0 w-full h-full object-cover" 
+          className="absolute inset-0 object-cover" 
+          priority
         />
       </AnimatePresence>
       <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/40 to-transparent" />
@@ -260,10 +280,13 @@ function StackCarousel({ projects, onExplore }: CarouselProps & { onExplore?: (p
               }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="absolute inset-0 rounded-[2.5rem] overflow-hidden bevel-card bg-secondary/80 cursor-pointer origin-bottom shadow-2xl"
-              style={{ zIndex: projects.length - offset }}
+              style={{ 
+                zIndex: projects.length - offset,
+                willChange: "transform, opacity, filter"
+              }}
               onClick={next}
             >
-              <img src={proj.image_url} alt={proj.title} className="w-full h-full object-cover" />
+              <Image src={proj.image_url} alt={proj.title} fill unoptimized className="object-cover" sizes="360px" priority={offset === 0} />
               {offset === 0 && (
                 <div className="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-background via-transparent to-transparent">
                   <div className="mb-4">
@@ -312,7 +335,7 @@ function FilmstripCarousel({ projects, onExplore }: CarouselProps & { onExplore?
             className={`w-[280px] md:w-[450px] shrink-0 rounded-[2.5rem] overflow-hidden bevel-card transition-all duration-700 cursor-pointer ${i === active ? "ring-2 ring-brand-accent/20 shadow-2xl shadow-brand-accent/5" : ""}`}
           >
             <div className="aspect-video relative">
-              <img src={proj.image_url} alt={proj.title} className="w-full h-full object-cover" />
+              <Image src={proj.image_url} alt={proj.title} fill unoptimized className="object-cover" sizes="(max-width: 768px) 280px, 450px" />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
               <div className="absolute bottom-6 left-6">
                 <h3 className="text-2xl font-medium tracking-tight text-white">{proj.title}</h3>

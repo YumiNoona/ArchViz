@@ -3,47 +3,82 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { ArrowUpRight, MapPin, LayoutGrid, Rows3, Filter } from "lucide-react";
+import Image from "next/image";
 import { getActiveProjects, Project, ProjectType } from "@/lib/supabase";
 import ProjectCarousel, { CarouselStyle } from "./ProjectCarousel";
 
 
 
+import { animate } from "animejs";
+
 function ProjectCard({
   project,
   index,
   onExplore,
+  theme,
 }: {
   project: Project;
   index: number;
   onExplore: (p: Project) => void;
+  theme?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const iconRef = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
   const [hovered, setHovered] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  useEffect(() => {
+    if (iconRef.current) {
+      animate(iconRef.current, {
+        rotate: hovered ? 45 : 0,
+        scale: hovered ? 1.15 : 1,
+        duration: 250,
+        easing: "easeOutCubic",
+      });
+    }
+  }, [hovered]);
+
+  // Pick theme-aware image
+  const imgSrc =
+    (theme === "light" && project.image_url_light) ||
+    (theme === "dark" && project.image_url_dark) ||
+    project.image_url;
 
   return (
     <motion.div
       ref={ref}
       initial={{ opacity: 0, y: 20 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.5, delay: Math.min(index * 0.08, 0.3), ease: [0.16, 1, 0.3, 1] }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className="group cursor-pointer"
       onClick={() => onExplore(project)}
     >
-      <div className="relative overflow-hidden bg-secondary/30 h-full flex flex-col rounded-[2.5rem] border border-white/5 group-hover:border-brand-accent/20 group-hover:bg-secondary/50 transition-all duration-500 shadow-2xl group-hover:shadow-brand-accent/5">
-        <div className="relative h-64 overflow-hidden">
-          <motion.img
-            src={project.image_url}
-            alt={project.title}
-            className="w-full h-full object-cover"
+      <div className="relative overflow-hidden bg-secondary/30 h-full flex flex-col rounded-[2.5rem] border border-white/5 group-hover:border-brand-accent/20 group-hover:bg-secondary/50 transition-all duration-300 shadow-2xl group-hover:shadow-brand-accent/5">
+        <div className="relative h-64 overflow-hidden bg-secondary/50">
+          {/* Skeleton shimmer shown until image loads */}
+          {!imgLoaded && (
+            <div className="absolute inset-0 bg-secondary/60 animate-pulse" />
+          )}
+          <motion.div
+            className="w-full h-full"
             animate={{ scale: hovered ? 1.05 : 1 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          />
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Image
+              src={imgSrc}
+              alt={project.title}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className={`object-cover transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+              onLoad={() => setImgLoaded(true)}
+              loading={index < 3 ? "eager" : "lazy"}
+              priority={index < 3}
+            />
+          </motion.div>
           <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-          
-
         </div>
 
         <div className="p-8 flex-1 flex flex-col">
@@ -51,7 +86,10 @@ function ProjectCard({
             <h3 className={`text-2xl font-medium tracking-tight transition-colors ${hovered ? "text-brand-accent" : "text-foreground"}`}>
               {project.title}
             </h3>
-            <div className={`p-2 rounded-full border transition-all duration-500 ${hovered ? "border-brand-accent/50 text-brand-accent translate-x-1 -translate-y-1" : "border-white/10 text-muted-foreground"}`}>
+            <div 
+              ref={iconRef}
+              className={`w-9 h-9 rounded-full border transition-all duration-500 flex items-center justify-center ${hovered ? "border-brand-accent/50 text-brand-accent" : "border-white/10 text-muted-foreground"}`}
+            >
               <ArrowUpRight size={18} />
             </div>
           </div>
@@ -74,14 +112,41 @@ function ProjectCard({
   );
 }
 
-export default function ProjectGrid({ onSelectProject }: { onSelectProject: (p: Project) => void }) {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"carousel" | "grid">("grid"); // Default to grid for Vercel feel
+export default function ProjectGrid({
+  onSelectProject,
+  initialProjects,
+}: {
+  onSelectProject: (p: Project) => void;
+  initialProjects?: Project[] | null;
+}) {
+  const [projects, setProjects] = useState<Project[]>(initialProjects ?? []);
+  const [loading, setLoading] = useState(!initialProjects);
+  const [view, setView] = useState<"carousel" | "grid">("grid");
+  const [theme, setTheme] = useState<string>("dark");
   const carouselStyle = "dynamic";
 
   useEffect(() => {
-    getActiveProjects().then(d => { setProjects(d); setLoading(false); });
+    // If initialProjects arrives after mount (race condition), update state
+    if (initialProjects && initialProjects.length > 0) {
+      setProjects(initialProjects);
+      setLoading(false);
+      return;
+    }
+    // Fallback: fetch if nothing was prefetched
+    if (projects.length === 0) {
+      getActiveProjects().then(d => { setProjects(d); setLoading(false); });
+    }
+  }, [initialProjects, projects.length]);
+
+  // Track theme for image switching
+  useEffect(() => {
+    const update = () => {
+      setTheme(document.documentElement.classList.contains("light") ? "light" : "dark");
+    };
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
   const filtered = projects;
@@ -160,7 +225,7 @@ export default function ProjectGrid({ onSelectProject }: { onSelectProject: (p: 
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
               >
                 {filtered.map((p, i) => (
-                  <ProjectCard key={p.id} project={p} index={i} onExplore={handleExplore} />
+                  <ProjectCard key={p.id} project={p} index={i} onExplore={handleExplore} theme={theme} />
                 ))}
               </motion.div>
             )}

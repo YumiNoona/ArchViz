@@ -58,12 +58,12 @@ export default function AdminPage() {
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(226,255,175,0.05),transparent_70%)]" />
       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #333 1px, transparent 0)', backgroundSize: '32px 32px' }} />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="relative w-full max-w-md"
       >
-        <div className="bevel-card p-10 bg-[#0A0A0A]/80 backdrop-blur-xl border-border/50 text-center">
+        <div className="bevel-card rounded-3xl p-10 bg-[#0A0A0A]/80 backdrop-blur-xl border border-border/50 text-center">
           <div className="w-16 h-16 rounded-2xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center mx-auto mb-8 text-brand-accent">
             <Shield size={32} />
           </div>
@@ -76,10 +76,10 @@ export default function AdminPage() {
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest ml-1">Secure Passcode</label>
               <div className="relative group">
                 <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-brand-accent transition-colors" />
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   autoFocus
-                  placeholder="••••••••"
+                  placeholder=""
                   value={pass}
                   onChange={e => setPass(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 rounded-xl bg-secondary/50 border border-border focus:outline-none focus:ring-1 focus:ring-brand-accent/20 focus:border-brand-accent/50 transition-all text-sm tracking-widest shadow-inner"
@@ -89,7 +89,7 @@ export default function AdminPage() {
 
             <AnimatePresence>
               {error && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   className="flex items-center gap-2 text-red-400 text-xs font-medium justify-center"
@@ -100,8 +100,8 @@ export default function AdminPage() {
               )}
             </AnimatePresence>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full btn-vercel h-12 text-sm font-bold flex items-center justify-center gap-3 active:scale-[0.98] transition-all"
             >

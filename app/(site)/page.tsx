@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 import Hero from "@/components/Hero";
 import ProjectGrid from "@/components/ProjectGrid";
@@ -11,14 +11,21 @@ import BackgroundCanvas from "@/components/BackgroundCanvas";
 import ProjectDetail from "@/components/ProjectDetail";
 import LaunchModal from "@/components/LaunchModal";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { supabase, type Project } from "@/lib/supabase";
+import WorkShowcase from "@/components/WorkShowcase";
+import { supabase, getActiveProjects, type Project } from "@/lib/supabase";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export default function Home() {
   const [detailProject, setDetailProject] = useState<Project | null>(null);
   const [launchProject, setLaunchProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Pre-fetch projects during loader so grid is instant after loading screen
+  const [prefetchedProjects, setPrefetchedProjects] = useState<Project[] | null>(null);
 
   useEffect(() => {
+    // Start fetching projects immediately — in parallel with the loading screen
+    getActiveProjects().then(setPrefetchedProjects);
+
     const params = new URLSearchParams(window.location.search);
     const projectId = params.get("project");
     if (projectId) {
@@ -36,7 +43,8 @@ export default function Home() {
   const handleBack = () => {
     setDetailProject(null);
     if (window.history.pushState) {
-      const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+      const newUrl =
+        window.location.protocol + "//" + window.location.host + window.location.pathname;
       window.history.pushState({ path: newUrl }, "", newUrl);
     }
     setTimeout(() => {
@@ -57,23 +65,32 @@ export default function Home() {
           <div key="content">
             <AnimatePresence mode="wait">
               {detailProject ? (
-                <ProjectDetail
-                  key={detailProject.id}
-                  project={detailProject}
-                  onBack={handleBack}
-                  onLaunch={p => setLaunchProject(p)}
-                />
+                <ThemeProvider key={`theme-${detailProject.id}`} attribute="class" defaultTheme="dark" enableSystem={false} storageKey={`ipds-project-${detailProject.id}`}>
+                  <ProjectDetail
+                    key={detailProject.id}
+                    project={detailProject}
+                    onBack={handleBack}
+                    onLaunch={p => setLaunchProject(p)}
+                  />
+                </ThemeProvider>
               ) : (
-                <main key="main" className="relative min-h-screen overflow-x-hidden">
-                  <BackgroundCanvas />
-                  <div className="relative z-[1]">
-                    <Navbar />
-                    <Hero />
-                    <ProjectGrid onSelectProject={p => setDetailProject(p)} />
-                    <Contact />
-                    <Footer />
-                  </div>
-                </main>
+                <ThemeProvider key="theme-site" attribute="class" defaultTheme="dark" enableSystem={false} storageKey="ipds-site-theme">
+                  <main key="main" className="relative min-h-screen overflow-x-hidden">
+                    <BackgroundCanvas />
+                    <div className="relative z-[1]">
+                      <Navbar />
+                      <Hero />
+                      {/* Pass prefetched data so grid renders immediately */}
+                      <ProjectGrid
+                        onSelectProject={p => setDetailProject(p)}
+                        initialProjects={prefetchedProjects}
+                      />
+                      <WorkShowcase />
+                      <Contact />
+                      <Footer />
+                    </div>
+                  </main>
+                </ThemeProvider>
               )}
             </AnimatePresence>
 

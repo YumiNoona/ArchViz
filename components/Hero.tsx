@@ -1,15 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { animate, stagger } from "animejs";
 
 export default function Hero() {
   const [mounted, setMounted] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted && headingRef.current) {
+      // Split text into characters
+      const text = headingRef.current.textContent || "";
+      headingRef.current.innerHTML = text
+        .split("")
+        .map((char) => `<span class="inline-block opacity-0">${char === " " ? "&nbsp;" : char}</span>`)
+        .join("");
+
+      animate(headingRef.current.querySelectorAll("span"), {
+        opacity: [0, 1],
+        translateY: [20, 0],
+        scale: [0.9, 1],
+        rotateX: [30, 0],
+        duration: 800,
+        delay: stagger(30, { start: 200 }),
+        easing: "outElastic(1, .8)",
+      });
+
+      // Animate grid floor movement
+      if (gridRef.current) {
+        animate(gridRef.current, {
+          backgroundPositionY: ["0px", "80px"],
+          duration: 2000,
+          easing: "linear",
+          loop: true,
+        });
+      }
+    }
+  }, [mounted]);
 
   if (!mounted) return null;
 
@@ -20,33 +54,19 @@ export default function Hero() {
 
       {/* Hero Content */}
       <div className="relative z-10 max-w-4xl flex flex-col items-center">
-
-
         {/* Main Heading */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="text-5xl sm:text-6xl md:text-8xl font-medium tracking-tighter leading-[1] mb-6"
+        <h1
+          ref={headingRef}
+          className="text-5xl sm:text-6xl md:text-8xl font-medium tracking-tighter leading-[1] mb-6 perspective-1000"
         >
-          Explore <span className="text-sweep">Architecture</span> <br className="hidden md:block" /> Before It's Built
-        </motion.h1>
-
-        {/* Subtext */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="text-lg md:text-xl text-muted-foreground max-w-2xl font-light leading-relaxed mb-12"
-        >
-
-        </motion.p>
+          Explore Architecture Before It&apos;s Built
+        </h1>
 
         {/* CTAs */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col sm:flex-row items-center gap-4"
         >
           <motion.button
@@ -77,6 +97,7 @@ export default function Hero() {
       {/* Grid Floor Visualization */}
       <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       <div
+        ref={gridRef}
         className="absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[200%] h-[400px] opacity-20 pointer-events-none"
         style={{
           backgroundImage: `

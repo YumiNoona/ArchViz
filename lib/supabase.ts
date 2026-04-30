@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder";
 
 export const supabase = createClient(supabaseUrl, supabaseAnon);
 
@@ -71,11 +71,13 @@ export async function getProjects(): Promise<Project[]> {
 export async function getActiveProjects(): Promise<Project[]> {
   const { data, error } = await supabase
     .from("projects")
-    .select("*")
+    // Only fetch fields needed for the grid — avoids sending large JSONB columns
+    // (narrative_sections, gallery_updates) on the initial page load
+    .select("id,title,description,image_url,image_url_dark,image_url_light,location,year,type,featured,is_active,sort_order,access_type,stream_url,status,story,has_live_updates,access_password")
     .eq("is_active", true)
     .order("sort_order", { ascending: true });
   if (error) console.error("getActiveProjects:", error.message);
-  return data ?? [];
+  return (data ?? []) as Project[];
 }
 
 export async function getProjectByToken(token: string): Promise<{ project: Project | null; auth: ProjectAuth | null }> {
@@ -106,22 +108,13 @@ export async function createProject(
   imageDarkFile?: File | null,
   imageLightFile?: File | null,
 ): Promise<{ error: string | null }> {
-  const uploadImage = async (file: File, suffix = "") => {
-    const ext  = file.name.split(".").pop() ?? "jpg";
-    const path = `${fields.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}${suffix}.${ext}`;
-    const { error } = await supabase.storage.from("project-images").upload(path, file, { upsert: false, contentType: file.type });
-    if (error) return { url: "", error: error.message };
-    const { data } = supabase.storage.from("project-images").getPublicUrl(path);
-    return { url: data.publicUrl, error: null };
-  };
-
-  const main = await uploadImage(imageFile);
+  const main = await uploadProjectImage(imageFile, fields.title);
   if (main.error) return { error: main.error };
 
   let darkUrl  = "";
   let lightUrl = "";
-  if (imageDarkFile)  { const r = await uploadImage(imageDarkFile,  "-dark");  if (!r.error) darkUrl  = r.url; }
-  if (imageLightFile) { const r = await uploadImage(imageLightFile, "-light"); if (!r.error) lightUrl = r.url; }
+  if (imageDarkFile)  { const r = await uploadProjectImage(imageDarkFile, fields.title, "-dark");  if (!r.error) darkUrl  = r.url; }
+  if (imageLightFile) { const r = await uploadProjectImage(imageLightFile, fields.title, "-light"); if (!r.error) lightUrl = r.url; }
 
   const { error: insertErr } = await supabase.from("projects").insert([{
     ...fields,
@@ -130,6 +123,15 @@ export async function createProject(
     image_url_light: lightUrl,
   }]);
   return { error: insertErr?.message ?? null };
+}
+
+export async function uploadProjectImage(file: File, projectTitle: string, suffix = "") {
+  const ext  = file.name.split(".").pop() ?? "jpg";
+  const path = `${projectTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}${suffix}.${ext}`;
+  const { error } = await supabase.storage.from("project-images").upload(path, file, { upsert: false, contentType: file.type });
+  if (error) return { url: "", error: error.message };
+  const { data } = supabase.storage.from("project-images").getPublicUrl(path);
+  return { url: data.publicUrl, error: null };
 }
 
 export async function updateProject(id: string, patch: Partial<Project>): Promise<{ error: string | null }> {
@@ -205,9 +207,11 @@ export interface VisitorEntry {
   project: string; project_id: string;
 }
 
-export async function saveVisitor(data: VisitorEntry) {
+export async function saveVisitor(data: VisitorEntry & { timestamp?: string }) {
   const { error } = await supabase.from("visitors").insert([{
-    ...data, timestamp: new Date().toISOString(),
+    ...data,
+    project_id: data.project_id || null,
+    timestamp: data.timestamp || new Date().toISOString(),
   }]);
   return { error: error?.message ?? null };
 }
@@ -246,9 +250,9 @@ export interface Enquiry {
   timestamp: string;
 }
  
-export async function saveEnquiry(data: Omit<Enquiry, "id" | "timestamp">) {
+export async function saveEnquiry(data: Omit<Enquiry, "id" | "timestamp"> & { timestamp?: string }) {
   const { error } = await supabase.from("enquiries").insert([{
-    ...data, timestamp: new Date().toISOString(),
+    ...data, timestamp: data.timestamp || new Date().toISOString(),
   }]);
   return { error: error?.message ?? null };
 }
