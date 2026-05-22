@@ -163,7 +163,7 @@ export default function ProjectGrid({
               Explore <span className="text-sweep">Featured</span> Projects
             </h2>
             <p className="text-muted-foreground text-lg font-light leading-relaxed">
-              A curated selection of our most groundbreaking architectural visualizations.
+              placeholder.
             </p>
           </div>
  

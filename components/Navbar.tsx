@@ -10,6 +10,7 @@ import Image from "next/image";
 const navLinks = [
   { label: "Projects", href: "#projects" },
   { label: "Our Work", href: "#work" },
+  { label: "Our Team", href: "#team" },
 ];
 
 export default function Navbar() {

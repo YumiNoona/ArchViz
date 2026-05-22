@@ -17,32 +17,14 @@ const milestones = [
     title: "Project Hemanti",
     description: "Founded with a vision to revolutionize architectural storytelling through real-time technology.",
     icon: Sparkles
-  },
-  {
-    year: "2020",
-    title: "Cloud Expansion",
-    description: "Pioneered pixel streaming for interactive 3D walkthroughs accessible on any device.",
-    icon: Building2
-  },
-  {
-    year: "2022",
-    title: "Global Recognition",
-    description: "Successfully delivered 200+ projects for top-tier developers across Southeast Asia.",
-    icon: Award
-  },
-  {
-    year: "2024",
-    title: "Next-Gen Fidelity",
-    description: "Implementing AI-driven lighting and physics to reach photorealism in real-time.",
-    icon: History
   }
 ];
 
 const stats = [
-  { label: "Projects Delivered", value: "350+", icon: Building2 },
-  { label: "Happy Clients", value: "120+", icon: Users2 },
-  { label: "Years Experience", value: "8+", icon: History },
-  { label: "Awards Won", value: "15", icon: Award },
+  { label: "Projects Delivered", value: "n+", icon: Building2 },
+  { label: "Happy Clients", value: "n+", icon: Users2 },
+  { label: "Years Experience", value: "n+", icon: History },
+  { label: "Awards Won", value: "n", icon: Award },
 ];
 
 export default function WorkShowcase() {
@@ -67,10 +49,10 @@ export default function WorkShowcase() {
                 </span>
               </div>
               <h2 className="text-4xl md:text-5xl font-medium tracking-tighter mb-6 leading-tight">
-                Our Legacy in <br /> <span className="text-sweep">Visualization.</span>
+                placeholder <br /> <span className="text-sweep">placeholder.</span>
               </h2>
               <p className="text-muted-foreground font-light leading-relaxed">
-                Over the past decade, we have partnered with visionary architects and developers to bring unbuilt spaces to life with unparalleled clarity and immersion.
+                placeholder
               </p>
             </div>
 

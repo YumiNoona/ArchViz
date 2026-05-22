@@ -73,7 +73,7 @@ export default function Contact() {
   const contacts = [
     { icon: Mail, label: "Email", value: "admin@i-pds.com", href: `mailto:admin@i-pds.com` },
     { icon: Phone, label: "Phone", value: "020-66268888", href: `tel:020-66268888` },
-    { icon: MapPin, label: "Studio", value: "Pune, Maharashtra", href: "https://maps.app.goo.gl/9X78pEzdHqe1iFya6" },
+    { icon: MapPin, label: "Office", value: "Pune, Maharashtra", href: "https://maps.app.goo.gl/9X78pEzdHqe1iFya6" },
   ];
 
   return (
